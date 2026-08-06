@@ -1,0 +1,115 @@
+# Configurazione del Requirement Burn-up.
+#
+# Copia questo file come `requirement-burnup-config.yml` alla RADICE del repo
+# del progetto, accanto a CLAUDE.md.
+#
+# Regola: ogni campo dichiarato qui è implementato. Nella v3 cinque campi
+# erano documentati e ignorati dal codice (test_source_globs,
+# default_scope_state, allow_forced_snapshot, schema_version,
+# risk_register_path), il che è peggio di un campo assente — prometteva un
+# comportamento inesistente. Se un campo compare in questo template, ha
+# effetto.
+
+# Governa la compatibilità: l'engine rifiuta di partire su uno schema diverso
+# invece di interpretare a caso una configurazione che non capisce.
+schema_version: "2.0"
+
+# Cartella di output. Deve essere RELATIVA alla radice del progetto: un
+# percorso assoluto viene rifiutato, perché l'engine non scrive mai fuori dal
+# repository.
+#   <output_dir>/state/    canonical store — è la fonte di verità, va versionato
+#   <output_dir>/reports/  Markdown generato — rigenerabile, cancellabile
+output_dir: "requirement-burnup"
+
+inputs:
+  # Dove cercare l'evidenza di implementazione, cioè il marcatore REQ nei
+  # commenti. Restringi il più possibile: un glob troppo ampio aumenta il
+  # tempo di scansione e il rischio di falsi positivi.
+  source_globs:
+    - "src/**/*"
+
+  # Report di test da importare. Formati: JUnit XML e JSON generico.
+  # Per la policy `current-revision` serve un sidecar accanto al report:
+  #   test-results/junit.xml       il report
+  #   test-results/junit.xml.meta.json   {"source_revision": "abc1234", "executed_at": "..."}
+  # Senza sidecar la revisione di esecuzione resta sconosciuta e il test non
+  # può soddisfare `current-revision`. È il comportamento corretto: la v3
+  # timbrava i report con l'HEAD del momento del refresh, rendendo quella
+  # policy sempre vera e quindi priva di significato.
+  test_report_globs:
+    - "test-results/**/*.xml"
+    - "test-results/**/*.json"
+
+  # Directory escluse in aggiunta a quelle sempre escluse dall'engine
+  # (.git, node_modules, .venv, __pycache__, la stessa output_dir...).
+  exclude_dirs: []
+
+requirements:
+  # Pattern degli ID come compaiono in spec.md. L'engine applica da sé i
+  # confini di token: `XFR-001Y` non viene mai collegato a FR-001.
+  accepted_id_patterns:
+    - "FR-[0-9]+"
+    - "NFR-[0-9]+"
+
+  # SOLO da queste sezioni vengono estratti i requisiti. Un `FR-999` citato
+  # sotto "Notes" come rimando non entra nello scope: viene segnalato come
+  # rilievo informativo e basta.
+  sections:
+    - "Requirements"
+    - "Functional Requirements"
+    - "Non-Functional Requirements"
+
+  # Sezioni che contengono le user story. L'appartenenza di un requisito a una
+  # user story è strutturale: nessun requisito eredita la user story di una
+  # sezione precedente. In alternativa si usa il tag inline `(US1)`.
+  user_story_sections:
+    - "User Scenarios"
+    - "User Stories"
+
+  default_scope_state: "active"
+
+traceability:
+  # Marcatore cercato nei commenti del codice. Il gruppo 1 deve catturare la
+  # chiave composita "feature/requisito". Vale SOLO dentro un commento: un
+  # marcatore dentro una stringa eseguibile non è una dichiarazione di
+  # tracciabilità e viene rifiutato.
+  code_evidence_marker: "REQ:\\s*([A-Za-z0-9_.\\-]+/[A-Za-z0-9_\\-]+)"
+
+  # Delimitatori di commento riconosciuti. Adatta al linguaggio del progetto.
+  comment_prefixes: ["#", "//", "--", "/*", "*", ";", "%"]
+
+  # Mappatura esplicita "nome nel report" -> "Test ID catalogato", per quando
+  # il nome nel report non contiene letteralmente il Test ID. Ha sempre la
+  # precedenza sul matching automatico.
+  test_id_mapping: {}
+
+status:
+  # Quando un esito "pass" conta come verifica valida:
+  #   current-revision     il test deve essere girato sulla revisione corrente,
+  #                        con working tree pulito e revisione dichiarata dal
+  #                        report o dal sidecar. È la policy rigorosa.
+  #   manual-confirmation  accetta una conferma manuale registrata con
+  #                        `burnup test confirm-manual`, che richiede attore,
+  #                        motivo ed evidenza. Adatta a progetti con collaudo
+  #                        manuale e senza pipeline.
+  #   latest-known         l'ultimo esito noto vale sempre. Nessun controllo di
+  #                        freschezza: usala solo consapevolmente.
+  test_freshness_policy: "manual-confirmation"
+
+  # Se true, un requisito raggiunge "implemented" solo con i task collegati
+  # completi. Se false, basta l'evidenza nel codice. Il default è prudente:
+  # nella v3 l'assenza di task valeva come "task a posto", quindi il solo
+  # marcatore nel codice bastava a dichiarare implementato un requisito.
+  require_tasks_for_implemented: true
+
+snapshots:
+  # Uno snapshot viene registrato quando i conteggi cambiano OPPURE quando
+  # cambia la composizione dello scope. Il secondo caso è quello che la v3
+  # non vedeva: rimuovere un requisito e aggiungerne un altro lasciava i
+  # numeri identici e non produceva alcuna traccia storica.
+  allow_forced_snapshot: true
+
+gates:
+  # Severità che bloccano `refresh --strict` (exit code 2). Va eseguito PRIMA
+  # dell'approvazione del Gate 4, non dopo.
+  strict_blocks_on: ["high"]

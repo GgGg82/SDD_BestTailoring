@@ -1,0 +1,38 @@
+# Preset Spec Kit: impone i Requirement Key nei task generati.
+#
+# Chiude P0-02 dell'audit della v3, dove il motore di traceability pretendeva
+# l'ID del requisito nella riga di ogni task ma nessun agente e nessun template
+# era obbligato a produrlo. Conseguenza verificata: i requisiti restavano
+# fermi allo stato iniziale anche a prodotto realmente implementato e testato.
+# Il sistema misurava l'assenza di metadata, non l'assenza di implementazione.
+#
+# Strategia 'append': il comando core resta intatto e questo preset aggiunge le
+# proprie regole in coda. Sostituirlo interamente significherebbe doverlo
+# risincronizzare a ogni aggiornamento di Spec Kit.
+
+schema_version: "1.0"
+
+preset:
+  id: "sdd-traceability"
+  version: "1.0.0"
+  name: "SDD Traceability — Requirement Keys nei task"
+  description: >
+    Impone che ogni task funzionale dichiari i requisiti che implementa, o si
+    marchi esplicitamente come non tracciabile. È la precondizione perché il
+    burn-up dei requisiti misuri l'implementazione reale invece della presenza
+    di metadata.
+  author: "SDD Multi-Agent Framework"
+  license: "MIT"
+  tags: ["traceability", "governance", "requirements", "quality-gate"]
+
+requires:
+  # Da allineare al tag fissato in INSTALL.md al momento del bootstrap.
+  speckit_version: ">=0.10.0"
+
+provides:
+  templates:
+    - name: "speckit.tasks"
+      type: "command"
+      path: "commands/speckit.tasks.md"
+      strategy: "append"
+      description: "Aggiunge il contratto di tracciabilità alla generazione dei task"

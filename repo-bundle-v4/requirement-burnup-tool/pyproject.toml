@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "requirement-burnup"
+version = "4.0.0b1"
+description = "Requirement traceability and burn-up measurement for Spec Kit projects"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = ["pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
+
+[project.scripts]
+burnup = "burnup.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["burnup"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true

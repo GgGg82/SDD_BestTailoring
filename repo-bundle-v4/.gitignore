@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Lock transitorio del canonical store.
+# NOTA: requirement-burnup/state/ VA versionato — è la fonte di verità e la
+# storia del progetto, non un artefatto rigenerabile.
+requirement-burnup/state/.lock

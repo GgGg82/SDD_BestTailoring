@@ -1,0 +1,69 @@
+name: CI
+
+# Chiude P0-12 e A7 del piano di remediation: la v3 non aveva né test né CI,
+# e i 23 probe dell'audit erano tutti riproducibili. Qui la matrice copre
+# Linux e Windows perché diversi difetti della v3 dipendevano dalla
+# piattaforma: newline, BOM, ordinamento dei glob, separatori di percorso.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: requirement-burnup-tool
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: python -m pip install --upgrade pip && pip install -e ".[dev]"
+
+      # Git è richiesto dai test di integrazione, che creano repository reali
+      # per verificare rilevamento della revisione e del working tree sporco.
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+          git config --global init.defaultBranch main
+
+      - name: Test suite
+        run: pytest --cov=burnup --cov-report=term-missing
+
+      # I controlli di integrità non devono dipendere dagli assert: la v3
+      # proteggeva l'invariante di burn-up con un `assert`, che sparisce qui.
+      - name: Test suite con ottimizzazioni abilitate
+        run: python -O -m pytest -q
+
+  probes:
+    name: Regressione sui probe dell'audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip && pip install -e ".[dev]"
+      - run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+      # Job dedicato e separato: se uno dei difetti chiusi si riapre, deve
+      # essere immediatamente evidente quale, senza leggere l'output completo.
+      - name: 23 probe dell'audit + 7 aggiunti
+        run: pytest tests/test_audit_probes.py tests/test_added_findings.py -v

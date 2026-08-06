@@ -1,0 +1,65 @@
+# Copia questo file come requirement-burnup-config.yml ALLA RADICE del repo del progetto
+# (accanto a CLAUDE.md), non dentro requirement-burnup-tool/ né dentro requirement-burnup/.
+#
+# Il Technical Auditor compila questo file con te durante l'intervista di
+# inizializzazione (comando 'init') — non lasciarlo compilare in silenzio con
+# i soli default: ogni scelta qui sotto ha conseguenze su cosa conta come
+# "fatto" nel burn-up.
+
+schema_version: "1.0"
+
+# Cartella di OUTPUT (generata, mai scritta a mano). Il percorso delle spec
+# native (specs/ oppure .specify/specs/) viene rilevato automaticamente ad
+# ogni esecuzione — non va configurato qui.
+output_dir: "requirement-burnup"
+
+inputs:
+  # Percorsi da scansionare per evidenza di implementazione, codice di test, e report di test.
+  # Personalizza in base alla struttura reale del progetto durante l'intervista.
+  source_globs:
+    - "src/**/*"
+    - "app/**/*"
+  test_source_globs:
+    - "tests/**/*"
+  test_report_globs:
+    - "test-results/**/*.xml"
+    - "test-results/**/*.json"
+
+requirements:
+  # Pattern degli ID dei requisiti, come compaiono in spec.md. Il default
+  # copre il template nativo di Spec Kit (FR-001, NFR-001); estendilo se il
+  # progetto usa convenzioni diverse.
+  accepted_id_patterns:
+    - "FR-[0-9]+"
+    - "NFR-[0-9]+"
+  default_scope_state: "active"
+
+traceability:
+  # Marcatore esplicito che lo script cerca nei commenti del codice sorgente
+  # per confermare un legame requisito -> codice. Il gruppo 1 deve catturare
+  # la chiave composita "feature/requisito". Adatta la sintassi del commento
+  # al linguaggio del progetto (es. MQL5 usa "//" come Python usa "#").
+  # Esempio di riga riconosciuta con il default: "# REQ: 001-esempio/FR-001"
+  code_evidence_marker: "REQ:\\s*([A-Za-z0-9_.\\-]+/[A-Za-z0-9_\\-]+)"
+
+  # Mappatura esplicita opzionale "nome del test nel report" -> "Test ID catalogato",
+  # per i casi in cui il nome nel report XML/JSON non contiene letteralmente il Test ID.
+  test_id_mapping: {}
+
+status:
+  # Policy di freschezza per considerare valido un test "pass" (vedi STATUS-RULES.md):
+  #   manual-confirmation — nessun controllo automatico di revisione (default:
+  #     funziona ovunque, anche senza CI/pipeline — consigliato per progetti
+  #     con collaudo manuale, es. MQL5/MetaTrader Strategy Tester)
+  #   current-revision    — il test deve essere stato eseguito sulla revisione Git corrente
+  #   latest-known         — l'ultimo risultato noto conta sempre, a prescindere dalla revisione
+  test_freshness_policy: "manual-confirmation"
+
+snapshots:
+  # Uno snapshot si aggiunge SOLO quando qualcosa cambia davvero (mai ad ogni
+  # refresh): evita di gonfiare lo storico con punti identici. Uno snapshot
+  # "di controllo" a conteggi invariati resta sempre possibile con
+  # 'refresh --force-snapshot'.
+  append_when_counts_change: true
+  append_when_scope_changes: true
+  allow_forced_snapshot: true
