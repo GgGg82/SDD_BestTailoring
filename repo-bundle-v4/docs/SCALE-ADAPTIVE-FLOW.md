@@ -16,6 +16,9 @@ Ciò che scala è il **numero di artefatti e di revisioni**, non il rigore della
 |---|---|---|---|
 | Quando | correzione di difetto, testo, configurazione, refactoring senza cambio di comportamento | tutto il resto — **default** | sicurezza, dati personali, denaro, irreversibilità, integrazioni esterne critiche, vincoli regolatori |
 | Requisiti toccati | ≤ 2, nessuno nuovo | qualunque | qualunque |
+| `-1.0` brainstorming | non richiesto | facoltativo, su raccomandazione | facoltativo, raccomandato |
+| `-1.1` project brief | non richiesto se già esistente | richiesto una tantum | richiesto una tantum |
+| `-1.2` user journeys | **verifica ridotta** | richieste | richieste + revisione dei passi scoperti |
 | `spec.md` | modifica del requisito esistente | completa | completa + scenari negativi espliciti |
 | `plan.md` | non richiesto | richiesto | richiesto + revisione architetturale indipendente |
 | `risk-register.md` | non richiesto | richiesto | richiesto + contingency e rischio residuo per ogni voce |
@@ -26,6 +29,10 @@ Ciò che scala è il **numero di artefatti e di revisioni**, non il rigore della
 | Test obbligatori | **sì** | **sì** | **sì**, con scenari negativi e casi limite |
 | `refresh --strict` | **sì** | **sì** | **sì**, `strict_blocks_on: [high, medium]` |
 | Approvatore del Gate 4 | Tech Lead | Tech Lead | utente umano, esplicitamente |
+
+> **La «verifica ridotta» di `-1.2` non è un salto.** È un controllo solo: che la feature ricada su un passo di journey già mappato. Se non ci ricade, la verifica **fallisce** e la Fase -1 va eseguita per intero. Il caso che quella fase esiste per intercettare — la feature che sembra piccola e non lo è — si manifesta esattamente così: non trova dove appoggiarsi.
+>
+> Resta una circolarità, dichiarata e non risolta: per sapere se la feature ricade su un passo mappato bisogna aprire `user-journeys.md`, cioè fare una parte di ciò che si vorrebbe evitare. La verifica ridotta la **limita** — leggere una tabella invece di riscrivere un documento — non la elimina. Chi decidesse senza aprire il file starebbe indovinando.
 
 ## Come si sceglie
 
@@ -50,9 +57,15 @@ Domande, in ordine. **Una sola risposta affermativa promuove alla classe superio
 4. Cambia un contratto verso l'esterno (API pubblica, formato di scambio, schema dati persistito)? → High-Risk
 5. Introduce requisiti nuovi? → almeno Standard
 6. Cambia il comportamento osservabile dal punto di vista dell'utente? → almeno Standard
-7. Tocca più di due requisiti esistenti? → almeno Standard
+7. Dopo la modifica, **quante cose devono restare coerenti fra loro**? Più di due — requisiti, contratti, formati, comportamenti che si presuppongono a vicenda → almeno Standard
 
 Nessuna affermativa → Fast Track.
+
+> **Sulla domanda 7 — cosa si conta davvero.** Non quanti file la modifica tocca, né quanto quei file sono importanti: **quanto coordinamento la modifica impone**.
+>
+> Aggiungere una riga di log diagnostico dentro un file centrale tocca un file importante e non obbliga nulla a restare allineato: resta Fast Track. Cambiare il formato di una data che tre punti diversi leggono non tocca nulla di importante, e impone coordinamento a tre punti: è Standard.
+>
+> La formulazione basata sull'importanza del file è un falso positivo noto. In un sistema che in caso di dubbio impone di salire, un falso positivo non costa un'esitazione: costa artefatti veri.
 
 **In caso di dubbio si sale, non si scende.** Il costo di una classe sovrastimata è qualche documento in più; il costo di una sottostimata è un difetto che attraversa i gate senza incontrare il controllo che lo avrebbe fermato.
 

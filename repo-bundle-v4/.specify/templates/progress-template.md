@@ -11,8 +11,10 @@ Ultimo aggiornamento: YYYY-MM-DD HH:MM
 > La classe può essere promossa in corsa, mai retrocessa.
 
 ## Fase -1 — Pre-Spec Kit
+> Step opzionali o modulati per classe di change. Uno step non eseguito si annota **`saltato (motivo, attore)`**: mai lasciato vuoto, mai spuntato. Un vuoto si legge come dimenticanza; una spunta mente.
+- [ ] -1.0 Brainstorming — pre-speckit/brainstorming/AAAA-MM-GG-tema.md (Product Manager) — **opzionale**: raccomandato dall'Orchestratore, deciso dall'utente — esito: _____
 - [ ] -1.1 Project Brief redatto — pre-speckit/project-brief.md (Product Manager) — una tantum per progetto: N/A nelle feature successive
-- [ ] -1.2 User journeys verificate/aggiornate — pre-speckit/user-journeys.md (Product Manager)
+- [ ] -1.2 User journeys verificate/aggiornate — pre-speckit/user-journeys.md (Product Manager) — Fast Track: verifica ridotta — esito: _____
 
 ## Fase 0 — Bootstrap (una tantum per progetto)
 - [ ] 0.1 Progetto inizializzato — `specify init` (Solutions Architect) — N/A se il repo è già inizializzato

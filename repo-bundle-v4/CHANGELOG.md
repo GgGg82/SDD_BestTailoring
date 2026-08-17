@@ -2,6 +2,33 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/). Versionamento semantico.
 
+## [Non rilasciato]
+
+Tre miglioramenti presi dalla cartella `Miglioramenti/`. Nessuno tocca i controlli P0: tracciabilità, evidenza fingerprinted, test obbligatori, path confinement e `refresh --strict` restano identici.
+
+### Aggiunto
+
+- **Step `-1.0` Brainstorming**, opzionale e ripetibile, di `@product-manager`. Colma un'asimmetria del framework: il dialogo riceve uno step, un proprietario e un artefatto in tre punti su quattro — `/speckit.clarify`, l'intervista sui rischi, `burnup init` — ma non nell'esplorazione che precede il Project Brief, dove esisteva solo come condotta ("se la richiesta è vaga, fai le domande giuste"). Le decisioni sopravvivevano negli artefatti, il ragionamento che le aveva prodotte no.
+  - Nuovo template `.specify/templates/brainstorming-template.md`, la cui sezione centrale sono le **alternative scartate con il motivo**, non le conclusioni.
+  - Regola inviolabile nel prompt del PM: **si facilita, non si genera.** Un agente che produce l'elenco delle opzioni delimita in silenzio lo spazio delle soluzioni, e l'utente non se ne accorge perché sta scegliendo.
+  - L'Orchestratore **raccomanda e si espone**, con sei criteri. In assenza di elementi per giudicare il default è *fare*, dichiarando di non averne.
+
+- **Corner-case sweep obbligatorio nello step 1.2**, nel prompt di `@business-analyst-qa`. Dodici categorie di condizione limite, cinque richieste in Standard e tutte e dodici in High-Risk; non richiesto in Fast Track. Risposta esplicita per categoria — un `PASS` complessivo non vale — e «non applicabile» richiede il motivo.
+  - Chiude il punto cieco a monte di ogni metrica: un requisito che non è stato scritto non compare da nessuna parte, e il burn-up può dichiarare il 100% `tested` senza accorgersi che manca il requisito giusto.
+  - Le risposte si registrano in `checklists/requirements.md`, **non** in `spec.md`: la spec è fingerprinted e i requisiti vengono estratti dalle sezioni configurate, mentre la checklist è il luogo previsto per la prova di aver verificato.
+  - Estratto dal change proposal FMEA senza adottarne il resto.
+
+### Modificato
+
+- **Domanda 7 delle classi di change** (`docs/SCALE-ADAPTIVE-FLOW.md`): da «tocca più di due requisiti esistenti» a «quante cose devono restare coerenti fra loro dopo la modifica». La soglia numerica resta, ma si estende oltre i soli requisiti — contratti, formati, comportamenti che si presuppongono a vicenda. Aggiunta la guardia contro il criterio basato sull'importanza del file, che è un falso positivo noto: in un sistema che in caso di dubbio impone di salire, un falso positivo costa artefatti veri.
+
+- **La Fase -1 entra nella tabella delle classi di change.** Prima ne era esclusa, e ne risultava un'incoerenza: una Fast Track saltava `plan.md`, il risk register e due gate interi, ma doveva comunque verificare le user journeys per intero. In Fast Track `-1.2` si riduce alla **verifica ridotta** — un controllo solo, che la feature ricada su un passo già mappato; se non ci ricade la verifica fallisce e la Fase -1 va eseguita tutta.
+
+- **`progress.md`**: uno step di Fase -1 non eseguito si annota `saltato (motivo, attore)`. Mai vuoto, mai spuntato: un vuoto si legge come dimenticanza, una spunta mente.
+
+- **`docs/RACI.md`**: nuove righe per l'artefatto di brainstorming e per la decisione di saltare uno step della Fase -1.
+
+
 ## [4.0.0-rc.2] — 2026-08-09
 
 **Otto difetti trovati facendo girare il framework su un progetto vero**, non

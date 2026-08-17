@@ -13,7 +13,7 @@ Vivono in `.claude/agents/`. Non improvvisare il loro lavoro: invocali esplicita
 | Agente | Ruolo | Step |
 |---|---|---|
 | `@solutions-architect` | Maker | 0.1, 0.2, 2.1, 2.1-loop |
-| `@product-manager` | Maker | -1.1, -1.2, 1.1, 1.2 (risposta) |
+| `@product-manager` | Maker | -1.0, -1.1, -1.2, 1.1, 1.2 (risposta) |
 | `@tech-lead` | Maker | 3.1, 4.3-review |
 | `@software-engineer` | Maker | 4.1, 4.4-loop |
 | `@business-analyst-qa` | Checker | 1.2 (domande), 1.3, 2.2, 2.2-risk, 4.5 |
@@ -25,10 +25,34 @@ Un audit completo ha rilevato che la v3 usava `/speckit.analyze` in tre punti, d
 
 ### Fase -1 — Pre-Spec Kit
 
+- **-1.0 Brainstorming** (`pre-speckit/brainstorming/<AAAA-MM-GG>-<tema>.md`) — **opzionale e ripetibile**. L'esplorazione che precede la formalizzazione: da qui escono le decisioni che gli altri due step si limitano a registrare.
 - **-1.1 Project Brief** (`pre-speckit/project-brief.md`) — una tantum, alla primissima feature del progetto.
-- **-1.2 User Journeys** (`pre-speckit/user-journeys.md`) — documento vivo, verificato **prima di ogni nuova feature**.
+- **-1.2 User Journeys** (`pre-speckit/user-journeys.md`) — documento vivo, verificato prima di ogni nuova feature. In Fast Track si riduce alla **verifica ridotta** descritta in `docs/SCALE-ADAPTIVE-FLOW.md`.
 
 Il collegamento con Spec Kit è a senso unico: `user-journeys.md` può citare le feature, mai il contrario.
+
+#### Quando proporre lo step -1.0
+
+Non presentare una scelta neutra: **dichiara una raccomandazione e il suo motivo.** Sei l'unico ad aver appena letto gli artefatti esistenti, quindi sei nella posizione migliore per istruire la decisione — che resta dell'utente.
+
+| Cosa osservi | Raccomandazione |
+|---|---|
+| Progetto nuovo, nessun Project Brief esistente | **fare** |
+| L'utente descrive un problema ma non una soluzione | **fare** |
+| Più direzioni plausibili, nessuna scelta | **fare** |
+| Richiesta precisa e circoscritta, soluzione già decisa dall'utente | **saltare** |
+| La feature ricade su passi di journey già mappati e non ne aggiunge | **saltare** |
+| Non hai elementi per giudicare | **fare**, dichiarando di non averne |
+
+L'ultima riga è la più importante. Una raccomandazione costruita su informazioni che non hai ha la forma di un giudizio senza esserlo, ed è peggio di nessuna raccomandazione. In assenza di elementi il default è eseguire.
+
+Lo step si può proporre anche **a posteriori**: se durante -1.1 il Product Manager riporta che l'intento è vago o che le assunzioni non reggono, il brainstorming serviva — e non è tardi.
+
+#### Saltare uno step della Fase -1
+
+Uno step saltato si annota in `progress.md` come `saltato (motivo, attore)`: **mai assente, mai spuntato**. Uno step assente si legge come dimenticanza e alla rilettura nessuno lo distingue da un errore; uno spuntato mente. Solo la forma dichiarata resta leggibile fra sei mesi, ed è anche l'unica che permette di accorgersi che lo si salta *sempre*.
+
+Che cosa sia saltabile, e a quali condizioni, lo stabilisce `docs/SCALE-ADAPTIVE-FLOW.md`.
 
 ### Fase 0 — Bootstrap, **una tantum per progetto**
 
@@ -38,7 +62,7 @@ Il collegamento con Spec Kit è a senso unico: `user-journeys.md` può citare le
 ### Fase 1 — COSA
 
 - **1.1** `/speckit.specify` → `spec.md`
-- **1.2** `/speckit.clarify` ↔ risposte del Product Manager
+- **1.2** `/speckit.clarify` ↔ risposte del Product Manager, con il **corner-case sweep** obbligatorio: dodici categorie di condizione limite, modulate per classe di change. Non richiesto in Fast Track. Vedi il prompt di `@business-analyst-qa`
 - **1.3** `/speckit.checklist` scope requisiti → `checklists/requirements.md`
 - **GATE 1** — approvazione della baseline dei requisiti
 
@@ -136,22 +160,24 @@ burnup finding waive … | burnup finding close …
 ## Avvio di un nuovo progetto
 
 1. Chiedi una descrizione del progetto e della prima feature.
-2. `@solutions-architect` per lo step **0.1** (`specify init`, una tantum) e **0.2** (constitution).
-3. `@product-manager` per lo step **-1.1** (Project Brief, una tantum).
-4. Prosegui con "Avvio di una nuova feature" dal punto 2.
+2. Valuta lo step **-1.0** (brainstorming) e **raccomanda**. Su un progetto nuovo la raccomandazione di default è *fare*: non esiste ancora nulla da cui dedurre che l'esplorazione sia superflua.
+3. `@solutions-architect` per lo step **0.1** (`specify init`, una tantum) e **0.2** (constitution).
+4. `@product-manager` per lo step **-1.1** (Project Brief, una tantum).
+5. Prosegui con "Avvio di una nuova feature" dal punto 3.
 
 ## Avvio di una nuova feature
 
 1. Chiedi una breve descrizione della feature.
-2. `@product-manager` per lo step **-1.2** (user journeys). Obbligatorio: non saltarlo perché la feature "sembra piccola".
-3. `@product-manager` per lo step **1.1** (`/speckit.specify`), che crea la feature e la sua cartella.
-4. Copia `.specify/templates/progress-template.md` nella cartella della feature come `progress.md`.
-5. Prosegui con lo step 1.2.
+2. Valuta lo step **-1.0** (brainstorming) e raccomanda, secondo i criteri della Fase -1. Se si fa, lo conduce `@product-manager`.
+3. `@product-manager` per lo step **-1.2** (user journeys). Richiesto in Standard e High-Risk. In Fast Track basta la **verifica ridotta** — definizione normativa in `docs/SCALE-ADAPTIVE-FLOW.md`: se la feature non ricade su un passo di journey già mappato, la verifica fallisce e lo step va eseguito per intero.
+4. `@product-manager` per lo step **1.1** (`/speckit.specify`), che crea la feature e la sua cartella.
+5. Copia `.specify/templates/progress-template.md` nella cartella della feature come `progress.md`.
+6. Prosegui con lo step 1.2.
 
 ## Percorsi di riferimento
 
 - Constitution: `.specify/memory/constitution.md` (livello repo)
-- Fase -1: `pre-speckit/project-brief.md`, `pre-speckit/user-journeys.md` (livello repo)
+- Fase -1: `pre-speckit/brainstorming/`, `pre-speckit/project-brief.md`, `pre-speckit/user-journeys.md` (livello repo)
 - Feature attiva: `specs/<NNN-feature>/` **oppure** `.specify/specs/<NNN-feature>/` — verifica quale esiste davvero. Se esistono **entrambe popolate**, lo strumento burn-up si ferma con errore: è una situazione ambigua che farebbe sparire silenziosamente metà dei requisiti dalle metriche.
 - Checklist: `checklists/requirements.md` e `checklists/plan.md` (file distinti)
 - Risk register: `risk-register.md` nella cartella della feature

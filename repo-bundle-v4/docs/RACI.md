@@ -12,6 +12,7 @@ Legenda ruoli: **ORC** Orchestratore · **PM** Product Manager · **SA** Solutio
 
 | Deliverable | ORC | PM | SA | TL | SE | BA | TA | UMA |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `pre-speckit/brainstorming/` | C *(raccomanda)* | R | I | I | I | I | I | **A** |
 | `project-brief.md` | C | R | C | I | I | C | I | **A** |
 | `user-journeys.md` | C | R | I | I | I | C | I | **A** |
 | `constitution.md` | C | C | R | C | C | C | C | **A** |
@@ -40,6 +41,7 @@ Legenda ruoli: **ORC** Orchestratore · **PM** Product Manager · **SA** Solutio
 | conferma manuale di un test | I | I | I | I | I | R | C | **A** |
 | deroga alla constitution | C | C | R | C | I | C | C | **A** |
 | classe di change (§ scale-adaptive) | R | C | C | C | I | C | C | **A** |
+| salto di uno step della Fase -1 | R *(raccomanda)* | C | I | I | I | I | I | **A** |
 
 ## Verifica
 
