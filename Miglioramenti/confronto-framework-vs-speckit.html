@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spec Kit vanilla vs Framework 6 Agenti | 123trading</title>
+<style>
+  :root{
+    --bg:#12141a;
+    --surface:#1a1d26;
+    --surface-2:#20232e;
+    --border:#2a2e3a;
+    --text:#e8e9ed;
+    --text-muted:#8b8fa3;
+    --maker:#4fc3f7;
+    --maker-dim:#1b3a4a;
+    --checker:#ffb74d;
+    --checker-dim:#4a3a1b;
+    --gate:#81c784;
+    --gate-dim:#1e3a20;
+    --vanilla:#8b8fa3;
+    --vanilla-dim:#22252f;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Menlo", monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); line-height:1.6;
+    padding:2.5rem 1.25rem 4rem;
+  }
+  .wrap{max-width:980px; margin:0 auto;}
+  .eyebrow{
+    font-family:var(--mono); font-size:0.75rem; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--text-muted); margin-bottom:0.6rem;
+  }
+  h1{font-size:1.65rem; margin:0 0 0.4rem; letter-spacing:-0.01em;}
+  .subtitle{color:var(--text-muted); font-size:0.98rem; max-width:680px; margin-bottom:2.4rem;}
+
+  /* Two column comparison */
+  .columns{
+    display:grid; grid-template-columns:1fr 1fr; gap:1.4rem;
+    margin-bottom:2.6rem;
+  }
+  @media (max-width:760px){ .columns{grid-template-columns:1fr;} }
+
+  .col{
+    border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    background:var(--surface);
+  }
+  .col-head{
+    padding:1rem 1.2rem; border-bottom:1px solid var(--border);
+  }
+  .col.vanilla .col-head{background:var(--vanilla-dim);}
+  .col.framework .col-head{background:var(--maker-dim);}
+  .col-head .tag{
+    font-family:var(--mono); font-size:0.68rem; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--text-muted); display:block; margin-bottom:0.3rem;
+  }
+  .col-head h3{margin:0; font-size:1.05rem;}
+  .col-body{padding:1.1rem 1.2rem;}
+
+  .flow-step{
+    display:flex; align-items:flex-start; gap:0.65rem;
+    padding:0.55rem 0; border-bottom:1px solid var(--border);
+    font-size:0.85rem;
+  }
+  .flow-step:last-child{border-bottom:none;}
+  .flow-step .n{
+    font-family:var(--mono); font-size:0.72rem; color:var(--text-muted);
+    flex-shrink:0; width:1.4rem; padding-top:0.1rem;
+  }
+  .flow-step .label{flex:1;}
+  .flow-step .label b{font-weight:600;}
+  .flow-step .label span{display:block; color:var(--text-muted); font-size:0.78rem; margin-top:0.1rem;}
+  .flow-step code{font-family:var(--mono); color:var(--text); font-size:0.79rem;}
+
+  .col.framework .flow-step .n{color:var(--maker);}
+  .col.framework .flow-step.checker .n{color:var(--checker);}
+  .col.framework .flow-step.gate{background:var(--gate-dim); margin:0.3rem -1.2rem; padding:0.5rem 1.2rem; border-bottom:1px solid var(--gate);}
+  .col.framework .flow-step.gate .label b{color:var(--gate);}
+
+  .operator-note{
+    margin-top:1rem; padding:0.7rem 0.9rem; background:var(--surface-2);
+    border-radius:8px; font-size:0.8rem; color:var(--text-muted);
+  }
+
+  /* Differentiators */
+  h2{font-size:1.15rem; margin:2.6rem 0 1.1rem; letter-spacing:-0.01em;}
+  .diffgrid{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;}
+  @media (max-width:760px){ .diffgrid{grid-template-columns:1fr;} }
+  .diffcard{
+    border:1px solid var(--border); border-radius:10px; padding:1rem 1.1rem;
+    background:var(--surface);
+  }
+  .diffcard h4{
+    margin:0 0 0.5rem; font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;
+  }
+  .diffcard.pro h4::before{content:"+"; color:var(--gate); font-family:var(--mono); font-weight:700;}
+  .diffcard.con h4::before{content:"–"; color:var(--checker); font-family:var(--mono); font-weight:700;}
+  .diffcard p{margin:0; font-size:0.83rem; color:var(--text-muted);}
+  .diffcard p code{font-family:var(--mono); color:var(--text); font-size:0.79rem;}
+
+  .verdict{
+    border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.3rem;
+    background:var(--surface-2); font-size:0.87rem; color:var(--text-muted);
+    margin-top:1.6rem;
+  }
+  .verdict b{color:var(--text);}
+
+  footer{
+    padding-top:2.5rem; text-align:center; color:var(--text-muted);
+    font-size:0.8rem; font-family:var(--mono); border-top:1px solid var(--border); margin-top:2.5rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">123trading — SDD Governance</div>
+  <h1>Spec Kit vanilla vs Framework 6 Agenti</h1>
+  <p class="subtitle">Stesso strumento di base (GitHub Spec Kit), due modi di usarlo. A sinistra il flusso nativo, pensato per un operatore singolo in una sessione continua. A destra la governance costruita sopra, con verifica indipendente ad ogni passaggio. Colonna destra allineata alla <b>v4.0.0-beta.1</b>, verificata sui file reali di <code>repo-bundle-v4/</code>.</p>
+
+  <div class="columns">
+
+    <div class="col vanilla">
+      <div class="col-head">
+        <span class="tag">Baseline</span>
+        <h3>Spec Kit — flusso nativo</h3>
+      </div>
+      <div class="col-body">
+        <div class="flow-step">
+          <span class="n">1</span>
+          <span class="label"><b>/speckit.specify</b><span>Scrivi <code>spec.md</code>.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">2</span>
+          <span class="label"><b>/speckit.clarify</b><span>Il modello ti pone domande, rispondi tu stesso.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">3</span>
+          <span class="label"><b>/speckit.plan</b><span>Scrivi <code>plan.md</code>.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">4</span>
+          <span class="label"><b>/speckit.tasks</b><span>Scomponi in <code>tasks.md</code>.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">5</span>
+          <span class="label"><b>/speckit.analyze</b><span>Verifica di coerenza — <i>opzionale</i>, la lanci tu quando vuoi.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">6</span>
+          <span class="label"><b>/speckit.implement</b><span>Il codice viene scritto.</span></span>
+        </div>
+        <div class="operator-note">Un solo operatore (tu + il modello), un'unica sessione continua di contesto. Nessun ruolo distinto tra chi scrive e chi verifica — sei tu a decidere quando e se controllare.</div>
+      </div>
+    </div>
+
+    <div class="col framework">
+      <div class="col-head">
+        <span class="tag">123trading</span>
+        <h3>Framework — 6 agenti Maker-Checker</h3>
+      </div>
+      <div class="col-body">
+        <div class="flow-step">
+          <span class="n">1.1</span>
+          <span class="label"><b>@product-manager</b><span>Scrive <code>spec.md</code> — <i>Maker</i>.</span></span>
+        </div>
+        <div class="flow-step checker">
+          <span class="n">1.3</span>
+          <span class="label"><b>@business-analyst-qa</b><span>Checklist requisiti indipendente — <i>Checker</i>.</span></span>
+        </div>
+        <div class="flow-step gate">
+          <span class="n">✓</span>
+          <span class="label"><b>GATE 1</b><span>Conferma umana esplicita prima di proseguire.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">2.1</span>
+          <span class="label"><b>@solutions-architect</b><span>Scrive <code>plan.md</code> — <i>Maker</i>.</span></span>
+        </div>
+        <div class="flow-step checker">
+          <span class="n">2.2</span>
+          <span class="label"><b>@business-analyst-qa</b><span>Checklist tecnica + risk register PMI. Nessun <code>analyze</code> qui: richiede <code>tasks.md</code>, che non esiste ancora.</span></span>
+        </div>
+        <div class="flow-step gate">
+          <span class="n">✓</span>
+          <span class="label"><b>GATE 2</b><span>Conferma umana, registrata in un Gate Decision Record.</span></span>
+        </div>
+        <div class="flow-step">
+          <span class="n">3.1</span>
+          <span class="label"><b>@tech-lead</b><span>Scompone in <code>tasks.md</code> con Requirement Key obbligatori — <i>Maker</i> dedicato, non l'Architect.</span></span>
+        </div>
+        <div class="flow-step checker">
+          <span class="n">3.2</span>
+          <span class="label"><b>@technical-auditor</b><span><code>/speckit.analyze</code> — unica invocazione valida del flusso: spec vs plan vs tasks vs constitution.</span></span>
+        </div>
+        <div class="flow-step checker">
+          <span class="n">4.2 → 4.5</span>
+          <span class="label"><b>@technical-auditor + @business-analyst-qa</b><span>Verifica indipendente via lint/test, converge, collaudo funzionale, <code>refresh --strict</code>.</span></span>
+        </div>
+        <div class="flow-step gate">
+          <span class="n">✓✓</span>
+          <span class="label"><b>GATE 3 / GATE 4</b><span>Due conferme umane in più rispetto al flusso nativo. Il Gate 4 non è approvabile con finding bloccanti aperti.</span></span>
+        </div>
+        <div class="operator-note">Sei agenti, ciascuno con contesto proprio. Chi scrive un artefatto non lo verifica mai. Più tre estensioni: Fase Meno Uno, Risk Register, Requirement Burn-up — e una classe di change dichiarata all'inizio di ogni feature.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>Cosa cambia davvero</h2>
+  <div class="diffgrid">
+    <div class="diffcard pro">
+      <h4>Verifica indipendente reale</h4>
+      <p>Spec Kit ha <code>/speckit.analyze</code>, ma lo lanci tu, nella stessa sessione, con lo stesso "cappello" con cui hai appena scritto il piano. Il framework separa chi scrive da chi controlla — è il motivo per cui un gap come REQ-007 in RiskGuard è emerso invece di passare inosservato.</p>
+    </div>
+    <div class="diffcard con">
+      <h4>Costo in token ed hop</h4>
+      <p>Sei agenti con contesto che si ricarica ad ogni passaggio, contro una sessione continua. È il costo più concreto del framework rispetto al nativo.</p>
+    </div>
+    <div class="diffcard pro">
+      <h4>Tracciabilità persistente</h4>
+      <p>Il Burn-up dà uno stato oggettivo (<code>defined/implemented/tested</code>) calcolato da script deterministico, con l'evidenza legata al fingerprint del contenuto del requisito: riscrivere un requisito ne fa decadere da solo lo stato <code>tested</code>. Spec Kit non ha nulla di equivalente — la tracciabilità resta implicita nella cronologia della sessione.</p>
+    </div>
+    <div class="diffcard pro">
+      <h4>Gate enforceable, non dichiarati</h4>
+      <p>I gate sono una state machine con exit code: <code>refresh --strict</code> esce con codice 2 e il Gate 4 non è approvabile con finding bloccanti. L'invalidazione a valle è un confronto di fingerprint, non una procedura da ricordare. In Spec Kit il concetto di gate non esiste affatto.</p>
+    </div>
+    <div class="diffcard pro">
+      <h4>Processo che scala col rischio</h4>
+      <p>Le classi Fast Track / Standard / High-Risk scalano il numero di artefatti e revisioni, mai il rigore della misurazione. Un fix di configurazione non attraversa più lo stesso ciclo di una feature che tocca l'autenticazione. Promozione ammessa in corsa, retrocessione no.</p>
+    </div>
+    <div class="diffcard con">
+      <h4>Superficie di apprendimento</h4>
+      <p>Nove documenti normativi, una CLI con sottocomandi per ogni decisione umana, un canonical store da versionare. È il prezzo dell'enforcement deterministico: ciò che non è un comando non è verificabile, ma ogni comando è una cosa in più da conoscere.</p>
+    </div>
+    <div class="diffcard pro">
+      <h4>Discovery di prodotto formalizzata</h4>
+      <p>La Fase Meno Uno forza a mettere per iscritto visione, rischi e assunzioni prima ancora di <code>/specify</code>. Spec Kit ha <code>constitution.md</code>, ma è statico e di principio, non una fase vissuta ad ogni progetto.</p>
+    </div>
+    <div class="diffcard con">
+      <h4>Non portabile</h4>
+      <p>Dipende dal filesystem di Claude Code — non lo incolli in una chat generica come un bundle BMad. Tradeoff accettato consapevolmente in cambio di semplicità dei file.</p>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <b>In sintesi:</b> Spec Kit vanilla ottimizza per velocità con un operatore singolo che si autocontrolla. Il framework a 6 agenti ottimizza per qualità e tracciabilità, pagando il costo in hop e token — una scelta esplicita di 123trading, non un default dello strumento. La v4 ha ridotto una delle due obiezioni storiche (la pesantezza uniforme, ora scalata dalle classi di change); l'altra, il costo degli agent-hop, resta aperta.
+  </div>
+
+  <footer>123trading — SDD Governance Framework · confronto Spec Kit vanilla vs framework v4.0.0-beta.1 · riallineato il 6 agosto 2026</footer>
+
+</div>
+</body>
+</html>

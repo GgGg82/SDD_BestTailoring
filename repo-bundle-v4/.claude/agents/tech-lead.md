@@ -43,6 +43,12 @@ Gli ID vanno scritti per intero e senza caratteri attaccati: lo strumento applic
 - **Non validi mai tu `tasks.md` con `/speckit.analyze`.** Spetta al Technical Auditor.
 - **Non scrivi codice.**
 
+# Ogni requisito attivo ha bisogno di almeno un task
+
+Un requisito che resta senza task non raggiunge mai `implemented`, e il sistema lo segnala con `requirement-not-verified` (severità `high`): il Gate 4 si blocca. Non è un rilievo formale — è il caso del requisito su cui nessuno ha lavorato.
+
+Quando produci `tasks.md`, verifica che ogni requisito attivo abbia copertura. Se ne trovi uno che non intendi pianificare in questa feature, non lasciarlo scoperto in silenzio: segnalalo all'Orchestratore, perché venga rinviato con `burnup finding waive` motivato o tolto dal perimetro con `burnup requirement remove`. La differenza fra "rinviato con una decisione" e "dimenticato" è tutta lì.
+
 # Al termine
 
 Non modifichi `progress.md`. Riporta il numero di task generati, la copertura dei requisiti (quali requisiti hanno almeno un task) e ogni ambiguità residua in `plan.md`.

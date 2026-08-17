@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framework — Oggi vs Roadmap (v4) | 123trading</title>
+<style>
+  :root{
+    --bg:#12141a;
+    --surface:#1a1d26;
+    --surface-2:#20232e;
+    --border:#2a2e3a;
+    --text:#e8e9ed;
+    --text-muted:#8b8fa3;
+    --maker:#4fc3f7;
+    --checker:#ffb74d;
+    --gate:#81c784;
+    --human:#ba68c8;
+    --proposal:#f06292;
+    --proposal-dim:#3a1f2c;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Menlo", monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); line-height:1.6;
+    padding:2.5rem 1.25rem 4rem;
+  }
+  .wrap{max-width:960px; margin:0 auto;}
+  .eyebrow{
+    font-family:var(--mono); font-size:0.75rem; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--text-muted); margin-bottom:0.6rem;
+  }
+  h1{font-size:1.6rem; margin:0 0 0.5rem; letter-spacing:-0.01em;}
+  .subtitle{color:var(--text-muted); font-size:0.95rem; max-width:680px; margin-bottom:1.4rem;}
+
+  .disclaimer{
+    display:flex; gap:0.8rem; align-items:flex-start;
+    background:var(--proposal-dim); border:1px solid var(--proposal);
+    border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:2.4rem;
+  }
+  .disclaimer .badge{
+    font-family:var(--mono); font-size:0.68rem; font-weight:700; letter-spacing:0.06em;
+    color:var(--proposal); border:1px solid var(--proposal); border-radius:5px;
+    padding:0.25rem 0.5rem; flex-shrink:0; white-space:nowrap;
+  }
+  .disclaimer p{margin:0; font-size:0.84rem; color:var(--text-muted);}
+  .disclaimer p b{color:var(--text);}
+
+  .legend{display:flex; flex-wrap:wrap; gap:0.55rem; margin-bottom:2.6rem;}
+  .dot{
+    display:inline-flex; align-items:center; gap:0.4rem;
+    font-family:var(--mono); font-size:0.7rem; padding:0.3rem 0.65rem;
+    border-radius:20px; border:1px solid var(--border); color:var(--text-muted);
+  }
+  .dot::before{content:""; width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .dot.today::before{background:var(--text-muted);}
+  .dot.proposal::before{background:var(--proposal);}
+
+  /* Comparison blocks */
+  .block{
+    border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    margin-bottom:1.4rem; background:var(--surface);
+  }
+  .block-head{
+    padding:0.85rem 1.2rem; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:0.7rem; background:var(--surface-2);
+  }
+  .block-letter{
+    font-family:var(--mono); font-size:0.75rem; color:var(--text-muted);
+    border:1px solid var(--border); border-radius:5px; padding:0.15rem 0.45rem;
+  }
+  .block-head h3{margin:0; font-size:1rem;}
+
+  .compare{display:grid; grid-template-columns:1fr auto 1fr;}
+  @media (max-width:680px){ .compare{grid-template-columns:1fr;} .compare .arrow{display:none;} }
+
+  .side{padding:1rem 1.2rem;}
+  .side.today{border-right:1px solid var(--border);}
+  @media (max-width:680px){ .side.today{border-right:none; border-bottom:1px dashed var(--border);} }
+  .side .tag{
+    font-family:var(--mono); font-size:0.68rem; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--text-muted); display:block; margin-bottom:0.5rem;
+  }
+  .side.today .tag{color:var(--text-muted);}
+  .side.proposal .tag{color:var(--proposal);}
+  .side.proposal{background:linear-gradient(180deg, var(--proposal-dim) 0%, transparent 12%);}
+  .side p{margin:0; font-size:0.84rem; color:var(--text-muted);}
+  .side p code{font-family:var(--mono); color:var(--text); font-size:0.79rem;}
+  .side.proposal p{color:var(--text);}
+
+  .arrow{
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-muted); font-size:1.1rem; padding:0 0.4rem;
+  }
+
+  .source{
+    font-family:var(--mono); font-size:0.7rem; color:var(--proposal);
+    padding:0.5rem 1.2rem 0.9rem; border-top:1px dashed var(--border); margin-top:0.2rem;
+  }
+
+  h2{font-size:1.1rem; margin:2.8rem 0 1rem; letter-spacing:-0.01em;}
+
+  .priority-note{font-size:0.86rem; color:var(--text-muted); max-width:680px; margin-bottom:1.2rem;}
+  .priority-note b{color:var(--text);}
+
+  table.priority{width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:0.6rem;}
+  table.priority th, table.priority td{
+    text-align:left; padding:0.65rem 0.8rem; border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.priority th{
+    font-family:var(--mono); font-weight:600; font-size:0.7rem;
+    text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);
+  }
+  table.priority td.rank{
+    font-family:var(--mono); font-weight:700; color:var(--gate); font-size:0.95rem;
+  }
+  table.priority td.name code{font-family:var(--mono); font-size:0.78rem; color:var(--text);}
+  table.priority td.why{color:var(--text-muted);}
+  table.priority td.dep{font-family:var(--mono); font-size:0.75rem; color:var(--text-muted); white-space:nowrap;}
+  table.priority tr.risen td.rank::after{
+    content:" ▲"; color:var(--proposal); font-size:0.7rem;
+  }
+
+  footer{
+    padding-top:2.5rem; text-align:center; color:var(--text-muted);
+    font-size:0.8rem; font-family:var(--mono); border-top:1px solid var(--border); margin-top:2.5rem;
+  }
+  .dot.done::before{background:var(--gate);}
+  .side.done .tag{color:var(--gate);}
+  .side.done{background:linear-gradient(180deg, #1e3a20 0%, transparent 12%);}
+  .side.done p{color:var(--text);}
+  .block.done .block-letter{border-color:var(--gate); color:var(--gate);}
+  .source.done{color:var(--gate);}
+  .sectionlead{font-size:0.88rem; color:var(--text-muted); max-width:700px; margin:0 0 1.3rem;}
+  .sectionlead b{color:var(--text);}
+  .gap{background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--checker);
+       border-radius:8px; padding:0.8rem 1.1rem; margin-bottom:0.8rem;}
+  .gap h4{margin:0 0 0.3rem; font-size:0.88rem;}
+  .gap p{margin:0; font-size:0.83rem; color:var(--text-muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">123trading — SDD Governance</div>
+  <h1>Framework — Oggi vs Roadmap</h1>
+  <p class="subtitle">Stato reale della roadmap dei miglioramenti, riallineato sulla <b>v4.0.0-beta.1</b> dopo verifica diretta sui file di <code>repo-bundle-v4/</code>. La versione precedente di questo documento era calibrata sulla v3 e presentava come "da fare" due capacità che la v4 aveva già consegnato.</p>
+
+  <div class="disclaimer">
+    <span class="badge">Correzione</span>
+    <p><b>Due delle sei proposte originali sono state assorbite dalla v4</b>, una terza è coperta a metà. La colonna destra dei blocchi rosa continua a rappresentare capacità <b>non ancora esistenti</b>; i blocchi verdi rappresentano invece capacità <b>già presenti nel bundle v4</b>, che nella stesura precedente erano erroneamente elencate come roadmap.</p>
+  </div>
+
+  <div class="legend">
+    <span class="dot today">Oggi — confermato</span>
+    <span class="dot done">Già consegnato dalla v4</span>
+    <span class="dot proposal">Roadmap — proposta, non implementata</span>
+  </div>
+
+  <h2>Assorbito dalla v4 — non è più roadmap</h2>
+  <p class="sectionlead">Due blocchi della roadmap precedente sono stati chiusi dal lavoro di remediation del 31 luglio, in una forma <b>diversa e in genere più forte</b> di quella proposta. Restano qui per memoria, non per pianificazione.</p>
+
+  <div class="block done">
+    <div class="block-head">
+      <span class="block-letter">A</span>
+      <h3>Routing dei task per complessità</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Come era proposto</span>
+        <p>Due percorsi (Completo / Snello) decisi da tre criteri: tocca un requisito tracciato · è visibile all'utente · impatto multi-componente reale. Basta un "sì" per il completo.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side done">
+        <span class="tag">Cosa c'è realmente in v4</span>
+        <p><b>Tre</b> classi — Fast Track / Standard / High-Risk — decise da <b>sette</b> domande, con soglie esplicite su autenticazione, dati personali, denaro, irreversibilità e contratti esterni. In più: <b>promozione ammessa in corsa, retrocessione vietata</b>, che la proposta non prevedeva. I controlli P0 (tracciabilità, test obbligatori, <code>refresh --strict</code>) non si riducono mai.</p>
+      </div>
+    </div>
+    <div class="source done">✔ docs/SCALE-ADAPTIVE-FLOW.md · chiude P2-03 — da recuperare: la formulazione raffinata del Criterio 3 (&ldquo;quante cose devono restare coerenti&rdquo;, non &ldquo;il file è importante&rdquo;) è più precisa della domanda 7 di v4</div>
+  </div>
+
+  <div class="block done">
+    <div class="block-head">
+      <span class="block-letter">B</span>
+      <h3>Calibrazione del modello per agente</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Come era descritto</span>
+        <p>&ldquo;Nessuna calibrazione esplicita scritta nei file agente. Il principio è stato discusso e deciso, ma non ancora tradotto in configurazione reale.&rdquo;</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side done">
+        <span class="tag">Cosa c'è realmente in v4</span>
+        <p>Tutti e sei i file in <code>.claude/agents/</code> hanno un campo <code>model:</code> esplicito: <code>opus</code> per Solutions Architect e Technical Auditor, <code>sonnet</code> per gli altri quattro. <b>Ciò che non esiste è il campo <code>effort</code></b> — non è previsto dal frontmatter degli agenti. La regola di escalation va riscritta su questo vincolo reale.</p>
+      </div>
+    </div>
+    <div class="source done">✔ .claude/agents/*.md — verificato sul frontmatter reale · resta aperto: <code>regola-escalation-modello-effort.md</code></div>
+  </div>
+
+  <h2>Roadmap reale — capacità non ancora esistenti</h2>
+  <p class="sectionlead">Sei voci, di cui una nuova (estratta dal change proposal FMEA) e una che la v4 ha reso <b>più facile</b> invece che superflua.</p>
+
+  <div class="block">
+    <div class="block-head">
+      <span class="block-letter">C</span>
+      <h3>Corner-case sweep obbligatorio in <code>clarify</code></h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Oggi</span>
+        <p><code>/speckit.clarify</code> pone domande di chiarimento senza una lista obbligatoria di condizioni limite da coprire. Input nulli, concorrenza, timeout, permessi, timezone e stati di recovery emergono se qualcuno ci pensa, non per costruzione.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side proposal">
+        <span class="tag">Con la roadmap</span>
+        <p>Lista di sweep obbligatoria nello step 1.2, dodici categorie di condizione limite. I casi che definiscono comportamento atteso entrano in <code>spec.md</code> come requisiti veri, quindi tracciati dal Burn-up. Si aggancia a ciò che la classe <b>High-Risk</b> già richiede (&ldquo;scenari negativi espliciti&rdquo;). Nessun agente nuovo, nessun artefatto nuovo, nessuna modifica all'engine.</p>
+      </div>
+    </div>
+    <div class="source">↳ estratto da CHANGE_PROPOSAL_FMEA_INTEGRATION §4.3 — indipendente dal resto della FMEA</div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <span class="block-letter">D</span>
+      <h3>Memoria di progetto — cross-sessione, cross-tool, cross-persona</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Oggi</span>
+        <p>Nessun <code>AGENTS.md</code> né <code>PROJECT-STATE.md</code> nel bundle v4: verificato. Nessuna continuità garantita tra sessioni diverse, strumenti diversi (Claude Code vs Codex CLI) o persone diverse. <code>CLAUDE.md</code> segnala il problema con Codex CLI senza risolverlo.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side proposal">
+        <span class="tag">Con la roadmap</span>
+        <p><code>AGENTS.md</code> come ancora tool-agnostica, letta automaticamente da Codex CLI. <code>PROJECT-STATE.md</code> come stato corrente — ma <b>generato da <code>burnup gate status</code></b>, non scritto a mano ai Gate come prevedeva la proposta originale. Questo elimina alla radice il rischio di staleness che il documento stesso identifica come principale, ed è coerente col principio v4 &ldquo;il Markdown è una proiezione generata&rdquo;.</p>
+      </div>
+    </div>
+    <div class="source">↳ proposta-sistema-memoria-progetto.md — l'unica proposta interamente non coperta dalla v4</div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <span class="block-letter">E</span>
+      <h3>Prioritizzazione dei requisiti a doppio asse</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Oggi</span>
+        <p>Nessuna distinzione tra requisiti essenziali e rimandabili. <code>risk_link.py</code> collega già i rischi ai requisiti, ma calcola solo &ldquo;rischio aperto sì/no&rdquo;, non un livello di criticità.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side proposal">
+        <span class="tag">Con la roadmap</span>
+        <p>Doppio asse: criticità <i>derivata</i> dal risk register (non dichiarativa, non inflazionabile) + priorità essenziale/rimandabile dichiarata dal PM e verificata dal BA/QA con tetto anti-inflazione. Il Technical Auditor segnala i conflitti fra i due assi. <b>Due correzioni necessarie:</b> il tag non può stare dentro la frase normativa del requisito, o cambiarlo ne invaliderebbe il fingerprint e quindi tutta l'evidenza; e l'Asse 1 va derivato dalla <i>severità</i>, non dall'esposizione, altrimenti un caso raro e catastrofico risulta non critico.</p>
+      </div>
+    </div>
+    <div class="source">↳ proposta-prioritizzazione-requisiti.md — valida, con difetto tecnico da correggere prima di implementare</div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <span class="block-letter">F</span>
+      <h3>Stima di completamento</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Oggi</span>
+        <p>Il Burn-up fotografa lo stato corrente (<code>defined/implemented/tested</code>) e la sua freschezza. Nessuna proiezione su quando il lavoro finisce.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side proposal">
+        <span class="tag">Con la roadmap</span>
+        <p>Comando opzionale separato dal refresh, con tre linee: pronto-per-implementare (soglia Gate 2), tutto implementato, tutto testato. <b>La v4 l'ha resa più facile:</b> il Gate Decision Record registra già data, approvatore e fingerprint di ogni approvazione, quindi la Linea A non richiede nuovo tracciamento. <b>Correzione consigliata:</b> con poche feature un fit di trend è rumore — esporre il <i>throughput osservato</i> con intervallo min-max e numero di punti, invece di una data proiettata.</p>
+      </div>
+    </div>
+    <div class="source">↳ proposta-burnup-forecast.md — infrastruttura ora quasi pronta, la statistica resta il punto debole</div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <span class="block-letter">G</span>
+      <h3>Registro delle decisioni di processo</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Oggi</span>
+        <p><code>docs/DESIGN-DECISIONS.md</code> esiste già in v4 ed è dichiarato &ldquo;formato ADR abbreviato&rdquo;: copre le decisioni <b>sull'engine</b> (canonical store, fingerprint, normalizzazione). Non copre le decisioni <b>sul processo</b> (perché il Tech Lead resta separato, perché i due Checker non si accorpano).</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side proposal">
+        <span class="tag">Con la roadmap</span>
+        <p>Sede unica per le decisioni di processo, di proprietà del <code>@technical-auditor</code>, con trigger alla chiusura di una discussione consultiva a esito netto. Da decidere esplicitamente: cartella <code>docs/adr/</code> a file immutabili, oppure estensione di <code>DESIGN-DECISIONS.md</code>. Due sedi senza un criterio di ripartizione divergono.</p>
+      </div>
+    </div>
+    <div class="source">↳ proposta-adr-progetto.md — coperta a metà, richiede una decisione di sede prima di implementare</div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <span class="block-letter">H</span>
+      <h3>FMEA — analisi preventiva dei failure mode</h3>
+    </div>
+    <div class="compare">
+      <div class="side today">
+        <span class="tag">Oggi</span>
+        <p>Il risk register PMI completo esiste già in v4 (owner, trigger, esposizione, azione con scadenza, contingency, rischio residuo). Manca un'analisi sistematica di <i>come una funzione può fallire</i>, con controlli preventivi e di rilevazione tracciati fino a task e test.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="side proposal">
+        <span class="tag">Con la roadmap</span>
+        <p>Analisi FMEA in due passaggi (funzionale pre-piano, tecnica post-piano) con azioni tradotte in task e verification method. <b>Il change proposal va però riscritto sulla baseline v4:</b> propone un settimo agente, che il remediation plan ha escluso con decisione esplicita; propone <code>fmea.md</code> come tabella Markdown riletta dall'engine, cioè il pattern &ldquo;Markdown come database&rdquo; appena smontato per chiudere P0-05/06/07; e definisce i criteri Gate in prosa, dove la v4 ha una state machine con exit code.</p>
+      </div>
+    </div>
+    <div class="source">↳ CHANGE_PROPOSAL_FMEA_INTEGRATION_SDD_FRAMEWORK.md — il più rigoroso per metodo, il più conflittuale per baseline</div>
+  </div>
+
+  <h2>Ordine di priorità</h2>
+  <p class="priority-note">Criterio: <b>rapporto tra valore e impegno</b>, indipendenza dalle altre voci, e compatibilità con le decisioni già congelate nella v4. Lo scorporo del corner-case sweep sale in testa perché è l'unica voce che non tocca né l'engine né i file agente né i gate: è una lista in un prompt esistente.</p>
+
+  <table class="priority">
+    <thead>
+      <tr><th>#</th><th>Voce</th><th>Perché lì</th><th>Dipendenze</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="rank">0</td>
+        <td class="name">Riallineamento della documentazione</td>
+        <td class="why">Prerequisito di tutto il resto: finché i documenti descrivono la v3, ogni implementazione parte da una fotografia sbagliata. È lo stesso difetto che l'audit ha punito nell'engine con P1-22.</td>
+        <td class="dep">Nessuna</td>
+      </tr>
+      <tr>
+        <td class="rank">1</td>
+        <td class="name"><code>corner-case sweep</code></td>
+        <td class="why">Miglior rapporto valore/impegno dell'intero insieme. Nessun agente nuovo, nessun artefatto, nessuna riga di Python. Alza la qualità della spec proprio dove il framework misura, e si aggancia a un requisito già presente della classe High-Risk.</td>
+        <td class="dep">Nessuna</td>
+      </tr>
+      <tr class="risen">
+        <td class="rank">2</td>
+        <td class="name"><code>AGENTS.md</code> + <code>PROJECT-STATE.md</code></td>
+        <td class="why">Non è un'ottimizzazione, è una protezione da un rischio di correttezza già presente: più strumenti e più persone sullo stesso repository. Con la parte di stato generata dall'engine il rischio di staleness sparisce, e il costo scende ulteriormente.</td>
+        <td class="dep">Referenzia #5</td>
+      </tr>
+      <tr>
+        <td class="rank">3</td>
+        <td class="name"><code>prioritizzazione-requisiti</code></td>
+        <td class="why">Valore autonomo reale e riuso di <code>risk_link.py</code> già esistente. Va però implementata <i>dopo</i> aver risolto la collisione col fingerprint, altrimenti introduce un difetto di misurazione — esattamente la classe di problemi che la v4 ha appena chiuso.</td>
+        <td class="dep">Alza il valore di #4</td>
+      </tr>
+      <tr>
+        <td class="rank">4</td>
+        <td class="name"><code>burnup forecast</code></td>
+        <td class="why">Infrastruttura ora quasi pronta grazie al Gate Decision Record. Resta un ritardo fisiologico: serve uno storico minimo prima che qualunque stima sia difendibile, indipendentemente da quando la si implementa.</td>
+        <td class="dep">Beneficia di #3</td>
+      </tr>
+      <tr>
+        <td class="rank">5</td>
+        <td class="name"><code>ADR di processo</code></td>
+        <td class="why">Investimento assicurativo: il framework funziona anche senza. Scende rispetto alla stesura precedente perché metà del bisogno è già coperto da <code>DESIGN-DECISIONS.md</code>; ciò che resta è soprattutto una decisione di sede, non di costruzione.</td>
+        <td class="dep">Completa #2</td>
+      </tr>
+      <tr>
+        <td class="rank">6</td>
+        <td class="name"><code>FMEA</code> (change proposal completo)</td>
+        <td class="why">Il più costoso e il più conflittuale: tocca agenti, artefatti, gate, engine e numero di versione. Va riaperto come discussione architetturale prima che come implementazione, perché contraddice una decisione già presa (nessun settimo agente) e un principio già consolidato (Markdown non è il database).</td>
+        <td class="dep">#1 ne è già stato estratto</td>
+      </tr>
+      <tr>
+        <td class="rank">—</td>
+        <td class="name"><code>escalation modello/effort</code></td>
+        <td class="why">Fuori sequenza: la premessa tecnica va verificata prima. Il campo <code>effort</code> non esiste nel frontmatter degli agenti, quindi la regola come scritta non è implementabile. Va riformulata su ciò che è realmente modificabile per singola invocazione, o abbandonata.</td>
+        <td class="dep">Verifica tecnica</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Cosa resta scoperto da tutte le proposte</h2>
+
+  <div class="gap">
+    <h4>Il costo degli agent-hop</h4>
+    <p>È il costo principale riconosciuto del framework e il tema esplicitamente messo in coda nelle sessioni precedenti. Nessuna delle proposte lo affronta: quella sulla memoria di progetto era nata da lì — dall'idea di un digest condiviso per ridurre la rilettura di contesto tra agenti — ma è stata generalizzata verso la continuità cross-sessione, lasciando il problema originale orfano. Le classi di change della v4 lo attenuano indirettamente, non lo risolvono.</p>
+  </div>
+
+  <div class="gap">
+    <h4>Il costo di implementazione non è mai stimato</h4>
+    <p>Le tabelle di priorità hanno sempre ordinato per impatto e dipendenze, mai per impegno. Per un framework il cui problema aperto dichiarato è il costo, è la colonna mancante — ed è la ragione per cui questa versione della tabella usa il rapporto valore/impegno come criterio primario.</p>
+  </div>
+
+  <div class="gap">
+    <h4>La migrazione dalla v3</h4>
+    <p>Solo il change proposal FMEA cita una migration strategy, e come decisione ancora da congelare. Nessun documento affronta cosa succede alle feature già avviate sotto la v3 quando il repository passa alla v4 — in particolare al cambio di numerazione degli step e alla sostituzione del Markdown con il canonical store.</p>
+  </div>
+
+  <footer>123trading — SDD Governance Framework · roadmap riallineata sulla baseline v4.0.0-beta.1 · 6 agosto 2026</footer>
+
+</div>
+</body>
+</html>

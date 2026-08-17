@@ -23,7 +23,13 @@ CANDIDATE_SPECS_SUBPATHS = ("specs", ".specify/specs")
 
 _US_HEADING_RE = re.compile(r"^\s*(?:User Story|US)\s*[-#]?\s*(\d+)\b", re.IGNORECASE)
 _INLINE_US_RE = re.compile(r"\(\s*US-?\s*(\d+)\s*\)", re.IGNORECASE)
-_TASK_LINE_RE = re.compile(r"^\s*-\s*\[( |x|X)\]\s*(T\d+)\b(.*)$")
+# L'enfasi Markdown attorno all'ID e' formattazione, non semantica: `**T001**`
+# e `T001` sono lo stesso task. Prima veniva preteso l'ID nudo, e una riga in
+# grassetto — forma frequente nel Markdown generato — non combaciava e spariva
+# in silenzio. Il sintomo non puntava alla causa: ogni requisito riceveva
+# `incomplete-tasks`, si andava a guardare `tasks.md` e lo si trovava tutto
+# spuntato. Trovato in simulazione su progetto reale, 2026-08-09.
+_TASK_LINE_RE = re.compile(r"^\s*-\s*\[( |x|X)\]\s*[*_`]{0,2}(T\d+)[*_`]{0,2}\b(.*)$")
 _NONREQ_RE = re.compile(r"\[NON-REQ(?::\s*([^\]]*))?\]", re.IGNORECASE)
 
 

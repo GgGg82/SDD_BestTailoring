@@ -43,7 +43,22 @@ Possiedi un layer trasversale: canonical store, Traceability Matrix, Test Regist
 
 4. **burnup-init** — conduci con l'utente un'intervista di configurazione: presenta ogni scelta con la tua raccomandazione e il motivo, e falla confermare. Non compilare in silenzio con i default. Poi `burnup init --project-root .`
 
-5. **burnup-refresh** — `burnup refresh --project-root . --strict`, **prima dell'approvazione del Gate 4**. L'exit code è il verdetto: `0` via libera, `2` findings bloccanti, `1` configurazione, `3` bug dello strumento. Riporta i conteggi e ogni finding bloccante.
+5. **burnup-refresh** — `burnup refresh --project-root . --strict`, **prima dell'approvazione del Gate 4**. L'exit code è il verdetto: `0` via libera, `2` findings bloccanti, `1` configurazione, `3` bug dello strumento, `4` errore d'uso (hai sbagliato la riga di comando, non il progetto). Riporta i conteggi e ogni finding bloccante.
+
+   I finding che bloccano il Gate 4 e come si chiudono — la tabella completa è in [`docs/OPERATING-PROCEDURE.md`](../../docs/OPERATING-PROCEDURE.md), questi sono quelli che vedrai più spesso:
+
+   | Finding | Cosa dire al Maker |
+   |---|---|
+   | `requirement-not-verified` | il requisito non è verificato: va portato a `tested`, oppure rinviato con `burnup finding waive` motivato, oppure tolto dal perimetro con `burnup requirement remove` |
+   | `missing-mandatory-test` / `test-never-run` | manca un test obbligatorio, o non è mai stato eseguito — è del Business Analyst/QA |
+   | `failing-mandatory-test` | il test obbligatorio fallisce: è del Software Engineer |
+   | `test-definition-stale` | il requisito è stato riscritto dopo che il test era stato definito: l'evidenza è decaduta e il test va riaffermato dal BA/QA con `test define --replace` |
+   | `uncommitted-changes` | ci sono modifiche non salvate in Git a spec, task o codice: la baseline che il gate congelerebbe non esiste in nessuna versione registrata. Va committato prima di approvare |
+   | `source-missing` | un requisito è sparito da `spec.md` senza una decisione: o si ripristina l'ID, o si registra `burnup requirement remove` |
+   | `duplicate-requirement-id` | lo stesso ID compare due volte nella feature: gli ID vanno resi univoci, è del Product Manager |
+   | `revision-unavailable` | il progetto non è un repository Git con almeno un commit, e la policy `current-revision` lo richiede: o si inizializza Git, o si cambia `test_freshness_policy` |
+
+   **Non chiudere un finding a mano sperando che sparisca.** `burnup finding close` lo chiude, ma se la condizione persiste il refresh successivo lo riapre: solo un waiver, che ha attore, motivo e scadenza, sopravvive.
 
 6. **burnup-status** — `burnup status --project-root .`, sola lettura. Riporta sempre la **freschezza** (`fresh`/`stale`/`unknown`): se è `stale`, i numeri descrivono uno stato superato e vanno presentati come tali.
 
@@ -58,7 +73,10 @@ burnup test define <id> --requirement <req> --definition <cosa> --mandatory --ac
 burnup test confirm-manual <id> --result pass --evidence <rif> --actor <chi> --reason <perché>
 burnup finding waive <id> --actor <chi> --reason <perché> --expires <quando>
 burnup finding close <id> --actor <chi> --reason <perché>
+burnup feature class <feature> fast-track|standard|high-risk --actor <chi> --reason <perché>
 ```
+
+L'ultimo lo dichiara l'Orchestratore all'inizio della feature, ma riguarda anche te: la classe determina **quali gate esistono**. In Fast Track il Gate 4 segue direttamente il Gate 1, e `burnup gate status <feature>` te lo riporta nel campo `change_class`. Ciò che **non** cambia in nessuna classe: tracciabilità, test obbligatori e `refresh --strict` prima del Gate 4.
 
 Ogni comando registra un record permanente. **Se ti trovi a voler modificare un file in `requirement-burnup/reports/`, fermati: ti manca un comando.** Segnalalo come gap dello strumento.
 

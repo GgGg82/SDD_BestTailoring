@@ -94,13 +94,42 @@ def parse_junit(report_path: Path, sidecar: dict) -> list[ImportedResult]:
     tree = ET.parse(report_path)
     root = tree.getroot()
 
-    suite_ts = _normalize_timestamp(root.get("timestamp", ""))
+    root_ts = _normalize_timestamp(root.get("timestamp", ""))
     sidecar_ts = _normalize_timestamp(str(sidecar.get("executed_at", "")))
     revision = str(sidecar.get("source_revision", "") or root.get("source_revision", "") or "")
     origin = "sidecar" if sidecar.get("source_revision") else ("report" if root.get("source_revision") else "unknown")
 
-    results: list[ImportedResult] = []
+    # C-07: l'ora va cercata anche sul <testsuite> che contiene il testcase, non
+    # solo sulla radice.
+    #
+    # TEST-REGISTER-SPEC prescrive l'ordine "testcase@timestamp ->
+    # testsuite@timestamp -> sidecar", ma il codice leggeva `root.get(...)`.
+    # Funzionava solo quando la radice era gia' un <testsuite>. Nella forma piu'
+    # diffusa — <testsuites> che avvolge uno o piu' <testsuite>, quella che
+    # producono pytest e la maggior parte dei CI — il timestamp sta sul figlio e
+    # veniva ignorato: nessun risultato aveva un'ora, quindi tutti venivano
+    # scartati e nessun report era importabile senza sidecar.
+    suites = root.findall(".//testsuite")
+    if root.tag == "testsuite":
+        suites = [root, *suites]
+
+    scoped: list[tuple[ET.Element, str, str]] = []
+    seen: set[int] = set()
+    for suite in suites:
+        suite_ts = _normalize_timestamp(suite.get("timestamp", "")) or root_ts
+        suite_rev = str(suite.get("source_revision", "") or "")
+        for tc in suite.findall(".//testcase"):
+            if id(tc) in seen:
+                continue
+            seen.add(id(tc))
+            scoped.append((tc, suite_ts, suite_rev))
     for tc in root.findall(".//testcase"):
+        if id(tc) not in seen:
+            seen.add(id(tc))
+            scoped.append((tc, root_ts, ""))
+
+    results: list[ImportedResult] = []
+    for tc, suite_ts, suite_rev in scoped:
         name = tc.get("name", "")
         classname = tc.get("classname", "")
         full = f"{classname}.{name}" if classname else name
@@ -118,14 +147,15 @@ def parse_junit(report_path: Path, sidecar: dict) -> list[ImportedResult]:
         # esecuzione: la v3 lo usava, e basta un `touch` o un checkout per
         # ringiovanire un report vecchio.
         executed_at = _normalize_timestamp(tc.get("timestamp", "")) or suite_ts or sidecar_ts
+        case_revision = revision or suite_rev
 
         results.append(
             ImportedResult(
                 test_name=full,
                 result=result,
                 executed_at=executed_at,
-                source_revision=revision,
-                revision_origin=origin if revision else "unknown",
+                source_revision=case_revision,
+                revision_origin=(origin if revision else ("report" if suite_rev else "unknown")),
                 duration=f"{tc.get('time')}s" if tc.get("time") else "",
             )
         )

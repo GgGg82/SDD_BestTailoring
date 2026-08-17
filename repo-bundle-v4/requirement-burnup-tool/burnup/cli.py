@@ -28,12 +28,16 @@ from .config import CONFIG_SCHEMA_VERSION, load_config
 from .engine import git_revision, run_scan
 from .errors import BurnupError, ConfigError, ExitCode, QualityGateFailed
 from .gates import (
+    CHANGE_CLASSES,
+    DEFAULT_CHANGE_CLASS,
     GATE_NAMES,
     GATE_SEQUENCE,
     GateDecision,
     check_entry_criteria,
     evaluate_gates,
     format_gate_report,
+    gates_for,
+    is_promotion,
 )
 from .ids import decision_id, now_iso, run_id
 from .models import Decision, Finding, Relation, TestDefinition, TestRun
@@ -109,6 +113,32 @@ def cmd_init(args) -> int:
     return ExitCode.OK
 
 
+#: Quanti finding bloccanti elencare per esteso nell'output leggibile.
+#: Oltre questa soglia l'elenco diventa un muro: in simulazione, 486 requisiti
+#: senza verifica producevano 491 righe. Il consumatore principale di questo
+#: output e' un agente con una finestra di contesto finita, quindi la lunghezza
+#: non puo' crescere con la dimensione del progetto. Il conteggio esatto resta
+#: nella riga di riepilogo, l'elenco completo in `--json` e nei report.
+MAX_FINDING_ELENCATI = 20
+
+
+def _righe_finding(blocking: list) -> list[str]:
+    """Elenca i finding bloccanti, raggruppando la coda invece di stamparla."""
+    righe = [
+        f"  [{f.finding_id}] {f.severity} {f.finding_type} — {f.subject}: {f.description}"
+        for f in blocking[:MAX_FINDING_ELENCATI]
+    ]
+    resto = len(blocking) - MAX_FINDING_ELENCATI
+    if resto > 0:
+        per_tipo: dict[str, int] = {}
+        for f in blocking[MAX_FINDING_ELENCATI:]:
+            per_tipo[f.finding_type] = per_tipo.get(f.finding_type, 0) + 1
+        dettaglio = ", ".join(f"{n}× {t}" for t, n in sorted(per_tipo.items(), key=lambda kv: -kv[1]))
+        righe.append(f"  … e altri {resto} finding bloccanti ({dettaglio}).")
+        righe.append("  Elenco completo: 'burnup refresh --json', oppure requirement-burnup/reports/.")
+    return righe
+
+
 def cmd_refresh(args) -> int:
     project_root, config = _load(args)
     store = Store(config.output_dir)
@@ -124,8 +154,7 @@ def cmd_refresh(args) -> int:
         f"Nuove esecuzioni importate: {result.new_runs} (duplicati ignorati: {result.skipped_duplicates})",
         f"Findings aperti: {len(result.findings)} — bloccanti: {len(result.blocking)}",
     ]
-    for f in result.blocking:
-        lines.append(f"  [{f.finding_id}] {f.severity} {f.finding_type} — {f.subject}: {f.description}")
+    lines.extend(_righe_finding(result.blocking))
 
     payload = {
         "command": "refresh",
@@ -166,7 +195,7 @@ def cmd_status(args) -> int:
     data = store.load()
     manifest = data.manifest
 
-    revision, dirty, _ = git_revision(project_root)
+    revision, dirty, _ = git_revision(project_root, config.output_dir)
     specs_root = detect_specs_root(project_root)
     current = {f.feature_id: f.fingerprints(project_root) for f in discover_features(specs_root)}
     recorded = manifest.get("features", {})
@@ -248,6 +277,21 @@ def cmd_test_define(args) -> int:
                 hint="Usa un ID diverso, oppure aggiungi --replace per sostituire la definizione esistente.",
             )
 
+        # C-02: si registra il fingerprint del requisito COM'E' ADESSO. La
+        # dichiarazione "questo test verifica questo requisito" e' una
+        # decisione umana, e riguarda il testo che l'autore aveva davanti. Se
+        # domani quel testo cambia, la dichiarazione va riaffermata.
+        fingerprints = {r.key: r.fingerprint for r in data.requirements if r.key in set(args.requirement)}
+
+        # C-09: TEST-REGISTER-SPEC dichiara `definition` obbligatorio —
+        # "cosa si verifica e qual e' l'esito atteso". Un catalogo di test
+        # senza criterio di esito e' un elenco di nomi.
+        if not (args.definition or "").strip():
+            raise ConfigError(
+                "'--definition' e' obbligatorio e non puo' essere vuoto.",
+                hint="Descrivi cosa verifica il test e qual e' l'esito atteso.",
+            )
+
         data.test_definitions = [t for t in data.test_definitions if t.test_id != args.test_id]
         data.test_definitions.append(
             TestDefinition(
@@ -259,6 +303,7 @@ def cmd_test_define(args) -> int:
                 location_or_command=args.command or "",
                 owner=args.owner or "",
                 environment=args.environment or "",
+                requirement_fingerprints=fingerprints,
             )
         )
         revision, _, _ = git_revision(project_root)
@@ -292,7 +337,7 @@ def cmd_test_confirm_manual(args) -> int:
                 f"Test ID '{args.test_id}' non definito.",
                 hint="Definiscilo prima con 'burnup test define'.",
             )
-        revision, dirty, _ = git_revision(project_root)
+        revision, dirty, _ = git_revision(project_root, config.output_dir)
         executed_at = args.executed_at or now_iso()
         from .ids import run_identity
 
@@ -459,16 +504,83 @@ def _feature_fingerprints(project_root, feature_id: str, data) -> dict[str, str]
     return fps
 
 
+def change_class_of(data, feature: str) -> str:
+    """Classe di change corrente di una feature.
+
+    C-10: non serve un campo nuovo nel canonical store. La classe e' una
+    decisione umana, e le decisioni hanno gia' una casa in `decisions.jsonl`
+    con attore, motivo e data. La classe corrente e' semplicemente l'ultima
+    decisione registrata per quella feature.
+    """
+    dichiarata = declared_class_of(data, feature)
+    return dichiarata if dichiarata else DEFAULT_CHANGE_CLASS
+
+
+def declared_class_of(data, feature: str) -> str:
+    """La classe ESPLICITAMENTE dichiarata, o stringa vuota se non lo e' mai stata.
+
+    Serve a distinguere due casi che il divieto di retrocessione tratterebbe
+    altrimenti allo stesso modo: la prima dichiarazione di una feature nuova
+    non e' una retrocessione, anche quando sceglie una classe piu' leggera del
+    default. Il documento parla di promozione *in corsa*, cioe' dopo che una
+    classe esiste.
+    """
+    scelte = [
+        d for d in data.decisions
+        if d.kind == "feature-class" and d.subject == feature
+    ]
+    return scelte[-1].payload.get("change_class", "") if scelte else ""
+
+
+def cmd_feature_class(args) -> int:
+    project_root, config = _load(args)
+    store = Store(config.output_dir)
+    with StoreLock(store.state_dir):
+        data = store.load()
+        attuale = declared_class_of(data, args.feature)
+        if attuale and not is_promotion(attuale, args.change_class):
+            raise ConfigError(
+                f"La feature '{args.feature}' e' in classe '{attuale}': "
+                f"non puo' essere retrocessa a '{args.change_class}'.",
+                hint=(
+                    "La promozione e' ammessa in corsa, la retrocessione no: significherebbe "
+                    "rimuovere un controllo dopo aver visto cosa avrebbe trovato."
+                ),
+            )
+        revision, _, _ = git_revision(project_root)
+        _record_decision(
+            store, data, kind="feature-class", subject=args.feature, actor=args.actor,
+            reason=args.reason, revision=revision,
+            payload={"change_class": args.change_class, "previous": attuale},
+        )
+        store.commit(data)
+
+    gate_previsti = ", ".join(map(str, gates_for(args.change_class)))
+    _emit(
+        {"command": "feature class", "feature": args.feature,
+         "change_class": args.change_class, "previous": attuale,
+         "gates": list(gates_for(args.change_class))},
+        args.json,
+        [f"Feature '{args.feature}': classe '{attuale or 'non dichiarata'}' -> '{args.change_class}'.",
+         f"Gate previsti: {gate_previsti}.",
+         "Tracciabilita', test obbligatori e 'refresh --strict' restano identici in ogni classe."],
+    )
+    return ExitCode.OK
+
+
 def cmd_gate_status(args) -> int:
     project_root, config = _load(args)
     data = Store(config.output_dir).load()
     fps = _feature_fingerprints(project_root, args.feature, data)
     states = evaluate_gates(args.feature, data.gate_decisions, fps)
+    classe = change_class_of(data, args.feature)
 
     _emit(
         {
             "command": "gate status",
             "feature": args.feature,
+            "change_class": classe,
+            "gates_required": list(gates_for(classe)),
             "current_fingerprints": fps,
             "gates": {
                 str(g): {
@@ -483,7 +595,7 @@ def cmd_gate_status(args) -> int:
             },
         },
         args.json,
-        format_gate_report(args.feature, states),
+        format_gate_report(args.feature, states, classe),
     )
     return ExitCode.OK
 
@@ -509,7 +621,9 @@ def cmd_gate_approve(args) -> int:
         ]
         blocking = [f for f in open_findings if f.is_blocking]
 
-        unmet = check_entry_criteria(args.gate, states, fps, blocking)
+        unmet = check_entry_criteria(
+            args.gate, states, fps, blocking, change_class_of(data, args.feature)
+        )
         if unmet and not args.force:
             raise QualityGateFailed(
                 f"Il Gate {args.gate} ({GATE_NAMES[args.gate]}) non e' approvabile: "
@@ -520,7 +634,7 @@ def cmd_gate_approve(args) -> int:
 
         outcome = "conditionally-approved" if (unmet or args.condition) else "approved"
         approved_at = now_iso()
-        revision, dirty, _ = git_revision(project_root)
+        revision, dirty, _ = git_revision(project_root, config.output_dir)
 
         active = [r for r in data.requirements if r.feature_id == args.feature and r.scope_state == "active"]
         decision = GateDecision(
@@ -589,6 +703,24 @@ def cmd_gate_reject(args) -> int:
 # Parser
 # --------------------------------------------------------------------------
 
+class _Parser(argparse.ArgumentParser):
+    """Parser che rispetta il contratto degli exit code.
+
+    C-08: `ExitCode.USAGE_ERROR = 4` era definito e mai usato. Argparse esce di
+    default con 2, che qui significa "quality gate fallito" ed e' contratto
+    pubblico: una pipeline non poteva distinguere un refuso sulla riga di
+    comando da un gate respinto, cioe' "hai sbagliato a scrivere" da "il codice
+    non e' pronto".
+
+    I sottoparser ereditano questa classe: `add_subparsers` usa `type(self)`.
+    """
+
+    def error(self, message: str):  # noqa: D102
+        self.print_usage(sys.stderr)
+        print(f"ERRORE [usage-error]: {message}", file=sys.stderr)
+        raise SystemExit(ExitCode.USAGE_ERROR)
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project-root", default=".", help="Radice del progetto Spec Kit (default: directory corrente)")
@@ -599,7 +731,7 @@ def build_parser() -> argparse.ArgumentParser:
     actor.add_argument("--actor", required=True, help="Chi prende la decisione (obbligatorio: una decisione senza autore non e' auditabile)")
     actor.add_argument("--reason", required=True, help="Motivo della decisione")
 
-    p = argparse.ArgumentParser(prog="burnup", description="Requirement Burn-up per Spec Kit")
+    p = _Parser(prog="burnup", description="Requirement Burn-up per Spec Kit")
     p.add_argument("--version", action="version", version="requirement-burnup 4.0.0-beta.1 "
                                                           f"(config schema {CONFIG_SCHEMA_VERSION})")
     sub = p.add_subparsers(dest="command", required=True)
@@ -670,6 +802,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_fc.set_defaults(func=cmd_finding_close)
 
     # -- gate -------------------------------------------------------------
+    p_feat = sub.add_parser("feature", help="Proprieta' di una feature")
+    feat_sub = p_feat.add_subparsers(dest="subcommand", required=True)
+    p_class = feat_sub.add_parser(
+        "class", parents=[common, actor],
+        help="Dichiara la classe di change (docs/SCALE-ADAPTIVE-FLOW.md)",
+    )
+    p_class.add_argument("feature")
+    p_class.add_argument("change_class", choices=CHANGE_CLASSES)
+    p_class.set_defaults(func=cmd_feature_class)
+
     p_gate = sub.add_parser("gate", help="Phase gate: stato, approvazione, rifiuto")
     gate_sub = p_gate.add_subparsers(dest="subcommand", required=True)
 
@@ -695,7 +837,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as exc:
+        # `--help` e `--version` escono con 0; gli errori d'uso con
+        # ExitCode.USAGE_ERROR grazie a `_Parser.error`. Ritornare il codice
+        # invece di propagare l'eccezione mantiene `main()` una funzione che
+        # restituisce un exit code, com'è per tutti gli altri percorsi.
+        return int(exc.code or ExitCode.OK)
     try:
         return args.func(args)
     except BurnupError as exc:
@@ -706,10 +855,40 @@ def main(argv: list[str] | None = None) -> int:
             if exc.hint:
                 print(f"  → {exc.hint}", file=sys.stderr)
         return exc.exit_code
-    except KeyboardInterrupt:
+    except KeyboardInterrupt:  # pragma: no cover - richiede un segnale reale
         print("Interrotto.", file=sys.stderr)
+        return ExitCode.ENGINE_ERROR
+    except Exception as exc:
+        # Senza questo ramo, qualunque eccezione non prevista risaliva come
+        # traceback grezzo e il processo usciva con 1 — che il contratto
+        # riserva a CONFIG_ERROR, "correggi il file". Chi legge veniva mandato
+        # a cercare un errore nella propria configurazione mentre il guasto
+        # era nell'engine. E' il difetto che il docstring di `errors.py`
+        # dichiara chiuso dalla v3 in avanti; era rimasto aperto qui.
+        #
+        # Riprodotto in simulazione: su un filesystem che nega `unlink`, il
+        # rilascio del lock del canonical store ha prodotto un
+        # `PermissionError` e dodici righe di traceback.
+        if getattr(args, "json", False):
+            print(
+                json.dumps(
+                    {
+                        "error": "engine-error",
+                        "message": f"{type(exc).__name__}: {exc}",
+                        "hint": "E' un bug dell'engine: segnalalo, non aggirarlo.",
+                        "exit_code": ExitCode.ENGINE_ERROR,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                file=sys.stderr,
+            )
+        else:
+            print(f"ERRORE [engine-error]: {type(exc).__name__}: {exc}", file=sys.stderr)
+            print("  → E' un bug dell'engine, non un problema della tua configurazione.", file=sys.stderr)
+            print("     Segnalalo allegando il comando eseguito. Nessun aggiramento è previsto.", file=sys.stderr)
         return ExitCode.ENGINE_ERROR
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - punto d'ingresso del processo
     raise SystemExit(main())

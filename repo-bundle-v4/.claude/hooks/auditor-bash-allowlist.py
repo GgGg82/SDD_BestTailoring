@@ -64,6 +64,22 @@ FORBIDDEN_PATTERNS = (
 
 CHECKER_AGENTS = {"technical-auditor", "business-analyst-qa"}
 
+# Separatori che introducono un comando nuovo. `&`, `&&`, `||`, `|`, `;` e la
+# sostituzione di comando: ognuno di questi apre un segmento che va validato a
+# sua volta.
+_SEPARATORI = re.compile(r"&&|\|\||[;|&\n]")
+
+
+def _segmenti(command: str) -> list[str]:
+    """Spezza una riga di comando nei singoli comandi che la compongono.
+
+    Deliberatamente grossolano: non e' un parser di shell, e non pretende di
+    esserlo. Serve a impedire che un comando consentito faccia da lasciapassare
+    a tutto cio' che lo segue.
+    """
+    pulito = command.replace("$(", " ").replace("`", " ").replace(")", " ")
+    return [s.strip() for s in _SEPARATORI.split(pulito) if s.strip()]
+
 
 def main() -> int:
     try:
@@ -71,9 +87,19 @@ def main() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0  # payload illeggibile: non e' compito dell'hook rompere la sessione
 
+    # C-12: se il payload non dichiara l'agente, non si puo' sapere se sia un
+    # Checker — e Solutions Architect e Software Engineer hanno Bash per
+    # lavorare. Prima l'allowlist si applicava a chiunque, quindi un `npm run
+    # build` di un Maker veniva bloccato.
+    #
+    # Il criterio lo detta il README di questo hook: "un hook che blocca il
+    # lavoro normale viene disattivato, e a quel punto non protegge piu' nulla".
+    # Meglio non vincolare che vincolare chi non deve esserlo: questo e' un
+    # filtro contro le scorciatoie, non una sandbox, e non e' l'unica difesa —
+    # i Checker non hanno comunque `Write` ne' `Edit`.
     agent = (payload.get("agent") or payload.get("subagent") or "").strip().lower()
-    if agent and agent not in CHECKER_AGENTS:
-        return 0  # l'allowlist vincola solo i Checker
+    if agent not in CHECKER_AGENTS:
+        return 0  # l'allowlist vincola solo i Checker dichiarati
 
     command = (payload.get("tool_input") or {}).get("command", "")
     if not command.strip():
@@ -97,21 +123,27 @@ def main() -> int:
             )
             return 2  # exit code 2 = blocca l'esecuzione dello strumento
 
-    first = command.strip().split("&&")[0].split("|")[0].strip()
-    if not any(first.startswith(p) for p in ALLOWED_PREFIXES):
-        print(
-            json.dumps({
-                "decision": "block",
-                "reason": (
-                    f"Comando non presente nell'allowlist dei Checker: '{first[:120]}'.\n"
-                    "Consentiti: strumento burn-up, test runner, linter, analizzatori statici, "
-                    "scanner di sicurezza, comandi git di sola lettura.\n"
-                    "Se ti serve davvero, e' un gap dell'allowlist: segnalalo invece di aggirarlo."
-                ),
-            }),
-            file=sys.stdout,
-        )
-        return 2
+    # C-13: ogni segmento della catena va validato, non solo il primo.
+    #
+    # Prima si guardava `command.split("&&")[0].split("|")[0]`, quindi bastava
+    # aprire con un comando consentito perche' tutto il resto passasse:
+    # `ls && npm install <qualunque cosa>` era accettato. Concatenare con `&&`
+    # e' esattamente la "scorciatoia" che questo hook dichiara di coprire.
+    for segmento in _segmenti(command):
+        if not any(segmento.startswith(p) for p in ALLOWED_PREFIXES):
+            print(
+                json.dumps({
+                    "decision": "block",
+                    "reason": (
+                        f"Comando non presente nell'allowlist dei Checker: '{segmento[:120]}'.\n"
+                        "Consentiti: strumento burn-up, test runner, linter, analizzatori statici, "
+                        "scanner di sicurezza, comandi git di sola lettura.\n"
+                        "Se ti serve davvero, e' un gap dell'allowlist: segnalalo invece di aggirarlo."
+                    ),
+                }),
+                file=sys.stdout,
+            )
+            return 2
 
     return 0
 

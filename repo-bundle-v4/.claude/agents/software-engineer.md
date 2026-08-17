@@ -48,6 +48,14 @@ Se durante l'implementazione incontri **una qualunque** di queste situazioni:
 - La verifica indipendente dello step 4.2 (lint, analisi statica, esecuzione test) è dell'Auditor. Tu esegui i tuoi test durante lo sviluppo, ma il tuo esito non fa fede per il Gate.
 - **Rispetta la constitution** — naming, struttura, standard di test — e le convenzioni già presenti nel progetto. Il contesto tecnologico specifico vive lì, non in questo prompt.
 
+# Committa il lavoro
+
+Il Gate 4 registra il **fingerprint del codice approvato**: serve a poter dire domani "ho approvato esattamente questa versione". Con modifiche non salvate in Git quel fingerprint non descrive alcuna versione registrata, e il sistema lo blocca con `uncommitted-changes`.
+
+Quindi: **il lavoro va committato prima che l'Auditor esegua `burnup refresh --strict`**, non dopo. Non contano i file che lo strumento burn-up scrive da sé — contano le tue modifiche a codice, spec e task.
+
+Se un finding `failing-mandatory-test` ti torna indietro, è un test obbligatorio che fallisce: correggi il codice o segnala che il test è sbagliato, ma non toccare la definizione del test — è del Business Analyst/QA.
+
 # Al termine
 
 Non modifichi `progress.md`. Riporta i task completati, i test scritti ed eseguiti, i marcatori `REQ:` inseriti, e ogni interruzione fail-fast con il motivo esatto.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "requirement-burnup"
-version = "4.0.0b1"
+version = "4.0.0rc2"
 description = "Requirement traceability and burn-up measurement for Spec Kit projects"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,5 +25,5 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [tool.coverage.report]
-fail_under = 85
+fail_under = 100
 show_missing = true

@@ -41,24 +41,41 @@ burnup refresh --strict --json
 | 1 | correggi `requirement-burnup-config.yml`; nessun file è stato scritto |
 | 2 | ci sono finding bloccanti: risolvili o registra un waiver motivato |
 | 3 | è un bug dell'engine: segnalalo, non aggirarlo |
+| 4 | errore d'uso: la riga di comando è sbagliata, non il progetto |
+
+Il `4` è distinto dal `2` di proposito: in una pipeline, *"hai sbagliato a scrivere"* e *"il codice non è pronto"* richiedono reazioni diverse, e un solo codice per entrambi le confonde.
 
 ## Findings ricorrenti e come si chiudono
 
+La tabella è esaustiva: un test di regressione verifica che ogni tipo che l'engine sa emettere compaia qui, e che qui non compaia nulla che l'engine non emetta.
+
 | Tipo | Severità | Chiusura |
 |---|---|---|
+| `requirement-not-verified` | high | porta il requisito a `tested`; per rinviarlo, `burnup finding waive` o `burnup requirement remove` |
 | `missing-mandatory-test` | high | `burnup test define … --mandatory` |
 | `failing-mandatory-test` | high | correggi codice o test, poi rilancia |
+| `test-never-run` | high | esegui il test e importa il report, o `burnup test confirm-manual` |
 | `source-missing` | high | `burnup requirement remove` se voluto, altrimenti ripristina l'ID |
 | `duplicate-requirement-id` | high | rendi univoci gli ID nella feature |
+| `uncommitted-changes` | high | committa il lavoro prima di approvare il Gate 4 |
+| `revision-unavailable` | high | rendi il progetto un repository Git con almeno un commit, o cambia `test_freshness_policy` |
 | `requirement-changed` | medium | riesegui i test e riconferma i collegamenti |
+| `test-definition-stale` | medium | verifica che il test copra il requisito riscritto, poi `burnup test define --replace` |
 | `incomplete-tasks` | medium | completa i task, o correggi collegamenti non pertinenti |
+| `tasks-complete-without-code-evidence` | medium | aggiungi il marcatore `REQ:` nel commento del codice |
 | `stale-evidence` | medium | rilancia sulla revisione corrente, o `burnup test confirm-manual` |
+| `missing-evidence` | medium | importa il report, o registra una conferma manuale con evidenza |
+| `missing-execution-timestamp` | medium | aggiungi `timestamp` al report o un sidecar `.meta.json` |
 | `unreadable-report` | medium | correggi il formato, o escludilo da `test_report_globs` |
+| `unreadable-source` | medium | correggi la codifica del file, o escludilo da `source_globs` |
 | `marker-outside-comment` | low | sposta il marcatore dentro un commento |
+| `marker-inside-string` | low | un marcatore in una stringa non è tracciabilità: spostalo in un commento |
 | `reference-outside-requirements` | low | informativo: l'ID è citato fuori dalle sezioni dei requisiti |
 | `test-orphan` | low | correggi `requirement_keys` del test |
+| `unmatched-test-report` | low | allinea il nome nel report al Test ID, o usa `test_id_mapping` |
+| `unnamed-test-result` | low | il report contiene un risultato senza nome: correggi chi lo produce |
 
-Un finding scompare da solo quando la condizione che lo genera sparisce: viene chiuso come `resolved`. Non serve chiuderlo a mano.
+Un finding scompare da solo quando la condizione che lo genera sparisce: viene chiuso come `resolved`. Non serve chiuderlo a mano — e se lo chiudi a mano mentre la condizione persiste, il refresh successivo lo riapre. Solo un waiver, che ha attore, motivo e scadenza, sopravvive.
 
 ## Cosa NON fare
 

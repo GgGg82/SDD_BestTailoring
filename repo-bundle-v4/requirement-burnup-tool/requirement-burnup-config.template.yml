@@ -32,6 +32,9 @@ inputs:
   # Per la policy `current-revision` serve un sidecar accanto al report:
   #   test-results/junit.xml       il report
   #   test-results/junit.xml.meta.json   {"source_revision": "abc1234", "executed_at": "..."}
+  # La revisione puo' essere abbreviata o completa: `git rev-parse HEAD` e
+  # `git rev-parse --short HEAD` indicano lo stesso commit e il confronto e'
+  # per prefisso, come fa Git stesso (minimo 7 caratteri).
   # Senza sidecar la revisione di esecuzione resta sconosciuta e il test non
   # può soddisfare `current-revision`. È il comportamento corretto: la v3
   # timbrava i report con l'HEAD del momento del refresh, rendendo quella

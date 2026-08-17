@@ -20,7 +20,7 @@ specify version   # verifica che la versione corrisponda
 
 | Framework | Spec Kit testato | Note |
 |---|---|---|
-| 4.0.0-beta.1 | *da fissare al momento del bootstrap* | Registra qui il tag verificato ed eseguito con successo end-to-end. |
+| 4.0.0-rc.2 | *da fissare al momento del bootstrap* | Registra qui il tag verificato ed eseguito con successo end-to-end. |
 
 Prima di aggiornare Spec Kit: esegui la suite di test del framework, poi una feature demo end-to-end, e solo dopo aggiorna questa tabella.
 

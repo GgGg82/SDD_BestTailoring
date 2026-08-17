@@ -61,7 +61,63 @@ class ScanResult:
     reports: dict[str, str] = field(default_factory=dict)
 
 
-def git_revision(project_root: Path) -> tuple[str, bool, str]:
+#: Quanti percorsi nominare nel rilievo prima di riassumere.
+_MAX_SPORCHI = 10
+
+
+def _elenco_sporchi(percorsi: list[str]) -> str:
+    """Rende azionabile il rilievo nominando i file, senza diventare un muro."""
+    if not percorsi:
+        return "(elenco non disponibile)"
+    testa = ", ".join(percorsi[:_MAX_SPORCHI])
+    resto = len(percorsi) - _MAX_SPORCHI
+    return f"{testa} e altri {resto}" if resto > 0 else testa
+
+
+def percorsi_sporchi(project_root: Path, exclude_dir: Path | None = None) -> list[str]:
+    """I file non committati, per nome.
+
+    Sta separata da `git_revision` perche' serve a un solo chiamante — il
+    rilievo `uncommitted-changes` — e gli altri undici non devono pagarne il
+    costo né cambiare firma.
+
+    Esiste perche' il messaggio del rilievo diceva che "qualcosa" non era
+    committato senza dire cosa. In simulazione questo ha portato a
+    diagnosticare come bug dell'engine una situazione che era un `.pyc`
+    tracciato per errore: senza i nomi, il rilievo manda a cercare nel posto
+    sbagliato. Trovato il 2026-08-09.
+    """
+    cmd = ["git", "status", "--porcelain", "--untracked-files=no"]
+    if exclude_dir is not None:
+        try:
+            rel = exclude_dir.resolve().relative_to(project_root.resolve())
+            cmd += ["--", ".", f":(exclude){rel.as_posix()}"]
+        except ValueError:
+            pass
+    try:
+        st = subprocess.run(cmd, cwd=project_root, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if st.returncode != 0:
+        return []
+    # Attenzione a non fare `.strip()` sull'intero stdout: nel formato
+    # porcelain le prime due colonne sono lo stato e possono essere spazi
+    # (` M a.py`), quindi uno strip globale mangia la prima colonna e sposta
+    # tutti i percorsi di un carattere.
+    percorsi = []
+    for riga in st.stdout.splitlines():
+        if len(riga) <= 3:
+            continue
+        percorso = riga[3:].strip()
+        # Le rinomine hanno forma `R  vecchio -> nuovo`: conta la destinazione.
+        if " -> " in percorso:
+            percorso = percorso.split(" -> ", 1)[1].strip()
+        if percorso:
+            percorsi.append(percorso)
+    return percorsi
+
+
+def git_revision(project_root: Path, exclude_dir: Path | None = None) -> tuple[str, bool, str]:
     """Ritorna (revisione, working tree sporco, motivo se sconosciuta).
 
     Chiude N-05: la v3 restituiva stringa vuota per qualunque motivo — git
@@ -87,10 +143,24 @@ def git_revision(project_root: Path) -> tuple[str, bool, str]:
 
     dirty = False
     try:
-        st = subprocess.run(
-            ["git", "status", "--porcelain", "--untracked-files=no"],
-            cwd=project_root, capture_output=True, text=True, timeout=10,
-        )
+        cmd = ["git", "status", "--porcelain", "--untracked-files=no"]
+        if exclude_dir is not None:
+            # I file che l'engine scrive da se' non contano come lavoro non
+            # salvato: sarebbe il refresh ad accusarsi da solo. Verificato in
+            # collaudo — seguendo la procedura di CLAUDE.md (refresh --strict,
+            # poi Gate 4) l'albero risulta sempre sporco perche' il refresh ha
+            # appena riscritto `state/` e `reports/`.
+            #
+            # E' anche coerente con una regola che il framework applica gia':
+            # la directory di output e' SEMPRE esclusa dalla scansione dei
+            # sorgenti (TRACEABILITY-RULES), per non farsi rileggere i propri
+            # output come evidenza.
+            try:
+                rel = exclude_dir.resolve().relative_to(project_root.resolve())
+                cmd += ["--", ".", f":(exclude){rel.as_posix()}"]
+            except ValueError:
+                pass
+        st = subprocess.run(cmd, cwd=project_root, capture_output=True, text=True, timeout=10)
         dirty = st.returncode == 0 and bool(st.stdout.strip())
     except (OSError, subprocess.SubprocessError):
         pass
@@ -134,7 +204,16 @@ class FindingFactory:
             feature_id=feature_id,
             description=description,
             recommended_action=recommended_action,
-            status=prior.status if prior else "open",
+            # C-04: solo il waiver sopravvive alla ri-emissione. Un finding
+            # chiuso come 'resolved'/'verified' che l'engine sta riproducendo
+            # ADESSO descrive una condizione ancora vera, quindi e' aperto.
+            #
+            # Ereditare `prior.status` faceva di `burnup finding close` un
+            # waiver permanente travestito — proprio cio' che il codice si
+            # vieta poche righe piu' sotto, dove riapre da solo i waiver
+            # scaduti. E la CLI lo annunciava gia': "Se la condizione che lo ha
+            # generato persiste, il prossimo refresh lo riaprira'."
+            status=prior.status if (prior and prior.status in ("waived", "accepted")) else "open",
             first_seen=prior.first_seen if prior and prior.first_seen else self.timestamp,
             last_changed=self.timestamp,  # ricalcolato subito sotto se nulla e' cambiato
             waiver_reason=prior.waiver_reason if prior else "",
@@ -233,7 +312,7 @@ def run_scan(config: BurnupConfig, *, forced_snapshot: bool = False) -> tuple[Sc
     specs_root = detect_specs_root(project_root)
     specs_label = relative_label(specs_root, project_root)
     features = discover_features(specs_root)
-    revision, dirty, revision_problem = git_revision(project_root)
+    revision, dirty, revision_problem = git_revision(project_root, config.output_dir)
 
     factory = FindingFactory(data.findings, timestamp)
     anomalies: list[tuple[str, str, str]] = []  # (tipo, dettaglio, feature)
@@ -284,6 +363,17 @@ def run_scan(config: BurnupConfig, *, forced_snapshot: bool = False) -> tuple[Sc
             else:
                 req.last_changed = timestamp
         else:
+            # C-06: `requirements.default_scope_state` era letto, validato e
+            # mai applicato — uno dei cinque campi che la v3 documentava e
+            # ignorava (P1-07), e l'unico che la v4 non aveva chiuso, malgrado
+            # il template dichiari "Se un campo compare in questo template, ha
+            # effetto".
+            #
+            # Vale solo per i requisiti NUOVI: sopra, un requisito gia' noto
+            # conserva il proprio `scope_state`, perche' una decisione umana
+            # registrata con `burnup requirement remove` non puo' essere
+            # ribaltata da un default di configurazione.
+            req.scope_state = config.default_scope_state
             req.first_seen = timestamp
             req.last_changed = timestamp
         merged[req.key] = req
@@ -369,6 +459,38 @@ def run_scan(config: BurnupConfig, *, forced_snapshot: bool = False) -> tuple[Sc
                     recommended_action="Correggi i requirement_keys del test, o verifica se il requisito e' stato rinominato.",
                 )
                 continue
+
+            # C-02: la relazione si crea solo se il test e' stato dichiarato
+            # verificare il requisito COSI' COM'E' scritto adesso.
+            #
+            # Prima questa riga usava `req.fingerprint`, cioe' il fingerprint
+            # corrente: la relazione veniva ristampata ad ogni refresh e non
+            # poteva mai risultare stantia. Riscrivere un requisito da
+            # "autenticare l'utente" a "cancellare tutti i dati al logout" lo
+            # lasciava `tested`. Il contrasto era a poche righe di distanza:
+            # alle relazioni confermate a mano il criterio giusto era gia'
+            # applicato.
+            declared = td.requirement_fingerprints.get(key, "")
+            if declared != req.fingerprint:
+                factory(
+                    severity="medium",
+                    finding_type="test-definition-stale",
+                    subject=td.test_id,
+                    subject_type="test",
+                    feature_id=req.feature_id,
+                    description=(
+                        f"Il test dichiara di verificare {key}, ma si riferisce a una versione "
+                        f"precedente del requisito"
+                        + (": il testo e' cambiato da allora." if declared else ", mai registrata.")
+                    ),
+                    recommended_action=(
+                        "Verifica che il test copra ancora il requisito riscritto, poi riafferma "
+                        "la definizione con 'burnup test define --replace' e registra una nuova "
+                        "esecuzione."
+                    ),
+                )
+                continue
+
             relations.append(
                 Relation(
                     from_key=key,
@@ -426,6 +548,34 @@ def run_scan(config: BurnupConfig, *, forced_snapshot: bool = False) -> tuple[Sc
             recommended_action="Correggi l'artefatto di origine indicato nel dettaglio.",
         )
 
+    # -- lavoro non salvato -------------------------------------------------
+    #
+    # Il Gate Decision Record congela il fingerprint del codice approvato: se
+    # ci sono modifiche non committate, quel fingerprint non descrive nessuna
+    # versione salvata, e il verbale dichiara congelato uno stato che non lo e'.
+    # `worktree_dirty` era gia' calcolato e scritto nel verbale, ma nessun
+    # criterio lo consultava.
+    #
+    # Non contano i file scritti dall'engine stesso: vedi `git_revision`.
+    if dirty:
+        factory(
+            severity="high",
+            finding_type="uncommitted-changes",
+            subject=relative_label(project_root, project_root) or ".",
+            subject_type="config",
+            feature_id="",
+            description=(
+                "Ci sono modifiche non salvate in Git a specifiche, task o codice: "
+                "la baseline che un gate congelerebbe adesso non corrisponde ad alcuna "
+                "versione registrata. File interessati: "
+                + _elenco_sporchi(percorsi_sporchi(project_root, config.output_dir))
+            ),
+            recommended_action=(
+                "Committa il lavoro prima di approvare il Gate 4. Se l'approvazione deve "
+                "avvenire comunque, registra un waiver motivato con 'burnup finding waive'."
+            ),
+        )
+
     if revision_problem and config.freshness_policy == "current-revision":
         factory(
             severity="high",
@@ -466,6 +616,15 @@ def run_scan(config: BurnupConfig, *, forced_snapshot: bool = False) -> tuple[Sc
         test_runs=all_runs,
         findings=all_findings,
         decisions=data.decisions,
+        # C-03: senza questa riga `commit` riscriveva `gate-decisions.jsonl`
+        # vuoto, e ogni refresh cancellava tutte le approvazioni. Il refresh
+        # ricalcola lo stato dell'evidenza; le decisioni umane le attraversa
+        # e basta, esattamente come gia' faceva per `decisions`.
+        #
+        # Non era marginale: `CLAUDE.md` impone `refresh --strict` PRIMA di
+        # ogni approvazione del Gate 4, quindi la procedura documentata
+        # azzerava i Gate 1-3 e rendeva il Gate 4 inapprovabile.
+        gate_decisions=data.gate_decisions,
         snapshots=snapshots,
         manifest={
             "scanned_at": timestamp,

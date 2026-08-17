@@ -119,6 +119,25 @@ def project(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
+def commit(project: Path):
+    """Salva in Git lo stato corrente del progetto di prova.
+
+    Serve ai test che verificano un `refresh --strict` andato a buon fine:
+    da quando il Gate 4 rifiuta di congelare una baseline con lavoro non
+    committato, un albero sporco e' di per se' una condizione bloccante.
+    """
+    def run(message: str = "stato") -> None:
+        subprocess.run(["git", "add", "-A"], cwd=project, check=True)
+        subprocess.run(
+            ["git", "-c", "user.email=t@example.com", "-c", "user.name=test",
+             "commit", "-qm", message],
+            cwd=project, check=True,
+        )
+
+    return run
+
+
+@pytest.fixture
 def cli(project: Path):
     """Invoca la CLI in-process e ritorna (exit_code, stdout, stderr)."""
     from burnup.cli import main

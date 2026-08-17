@@ -12,7 +12,7 @@ Vivono in `.claude/agents/`. Non improvvisare il loro lavoro: invocali esplicita
 
 | Agente | Ruolo | Step |
 |---|---|---|
-| `@solutions-architect` | Maker | 0.2, 2.1, 2.1-loop |
+| `@solutions-architect` | Maker | 0.1, 0.2, 2.1, 2.1-loop |
 | `@product-manager` | Maker | -1.1, -1.2, 1.1, 1.2 (risposta) |
 | `@tech-lead` | Maker | 3.1, 4.3-review |
 | `@software-engineer` | Maker | 4.1, 4.4-loop |
@@ -172,7 +172,13 @@ In `docs/`. Se hai un dubbio su cosa conta come "fatto", la risposta è lì e no
 
 ## Classe di change
 
-All'inizio di ogni feature **dichiara la classe** (Fast Track / Standard / High-Risk) secondo [`docs/SCALE-ADAPTIVE-FLOW.md`](docs/SCALE-ADAPTIVE-FLOW.md), motivala, e annotala in `progress.md`. In caso di dubbio si sale, mai si scende.
+All'inizio di ogni feature **dichiara la classe** (Fast Track / Standard / High-Risk) secondo [`docs/SCALE-ADAPTIVE-FLOW.md`](docs/SCALE-ADAPTIVE-FLOW.md), motivala, annotala in `progress.md` **e comunicala all'engine**:
+
+```
+burnup feature class <NNN-feature> fast-track|standard|high-risk --actor <chi> --reason <perché>
+```
+
+Senza quel comando la classe resta una nota che nessun controllo legge, e il sistema applica il default Standard. In caso di dubbio si sale, mai si scende: la retrocessione viene rifiutata.
 
 Ciò che scala è il numero di artefatti e revisioni, **mai** il rigore della misurazione: tracciabilità, test obbligatori e `refresh --strict` prima del Gate 4 valgono identici in tutte le classi.
 

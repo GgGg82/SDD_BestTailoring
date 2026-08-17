@@ -65,5 +65,5 @@ jobs:
           git config --global user.name "CI"
       # Job dedicato e separato: se uno dei difetti chiusi si riapre, deve
       # essere immediatamente evidente quale, senza leggere l'output completo.
-      - name: 23 probe dell'audit + 7 aggiunti
+      - name: Probe dell'audit e regressioni aggiunte
         run: pytest tests/test_audit_probes.py tests/test_added_findings.py -v

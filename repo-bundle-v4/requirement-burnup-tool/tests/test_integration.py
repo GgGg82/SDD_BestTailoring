@@ -178,7 +178,7 @@ def test_strict_blocks_on_high_finding(project: Path, cli):
     assert code == 2
 
 
-def test_strict_passes_once_findings_are_resolved(project: Path, cli):
+def test_strict_passes_once_findings_are_resolved(project: Path, cli, commit):
     cli("init")
     for tid, rid in (("TEST-FR1", "001-demo/FR-001"), ("TEST-NFR1", "001-demo/NFR-001")):
         cli("test", "define", tid, "--requirement", rid, "--definition", "d",
@@ -191,6 +191,7 @@ def test_strict_passes_once_findings_are_resolved(project: Path, cli):
     (project / "src" / "auth.py").write_text(
         "# REQ: 001-demo/FR-001\n# REQ: 001-demo/NFR-001\ndef auth():\n    return True\n", encoding="utf-8"
     )
+    commit("feature completa")
     cli("refresh", "--strict")
 
 
@@ -200,13 +201,67 @@ def test_waiver_unblocks_gate_and_is_auditable(project: Path, cli):
     blocking = json.loads(out)["blocking_findings"]
     assert blocking
 
-    fid = blocking[0]["finding_id"]
-    cli("finding", "waive", fid, "--actor", "cto@team", "--reason", "accettato per la release 1.0",
-        "--expires", "2099-01-01T00:00:00Z")
+    # Da C-01 in poi un requisito non verificato produce un finding proprio,
+    # quindi le condizioni bloccanti sono piu' d'una: il waiver va registrato
+    # per ciascuna. E' il comportamento voluto — il rinvio resta possibile, ma
+    # va dichiarato requisito per requisito, non una volta sola.
+    for finding in blocking:
+        cli("finding", "waive", finding["finding_id"], "--actor", "cto@team",
+            "--reason", "accettato per la release 1.0", "--expires", "2099-01-01T00:00:00Z")
     cli("refresh", "--strict")
 
     decisions = (project / "requirement-burnup" / "state" / "decisions.jsonl").read_text(encoding="utf-8")
     assert "cto@team" in decisions and "accettato per la release 1.0" in decisions
+
+
+def test_closed_finding_reopens_if_the_condition_persists(project: Path, cli):
+    """C-04, trovato nel collaudo del 2026-08-06.
+
+    `burnup finding close` stampa: "Se la condizione che lo ha generato
+    persiste, il prossimo refresh lo riaprira'." Non succedeva: la
+    `FindingFactory` ereditava `status=prior.status`, quindi un finding chiuso
+    veniva ri-emesso gia' chiuso e non tornava mai visibile.
+
+    Effetto pratico: `close` era un waiver permanente travestito — esattamente
+    la cosa che il codice si vieta poche righe piu' sopra, dove fa riaprire da
+    solo un waiver scaduto perche' "un'eccezione a tempo che non si riapre e'
+    un'eccezione permanente travestita".
+
+    Lo stato di un finding, come quello di un requisito, deve essere una
+    funzione dell'evidenza corrente.
+    """
+    cli("init")
+    _, out, _ = cli("refresh", "--json", "--strict", expect=ExitCode.QUALITY_GATE_FAILED)
+    fid = json.loads(out)["blocking_findings"][0]["finding_id"]
+
+    cli("finding", "close", fid, "--actor", "lead", "--reason", "credo sia rientrato")
+    cli("refresh", "--strict", expect=ExitCode.QUALITY_GATE_FAILED)
+
+    findings = {
+        json.loads(line)["finding_id"]: json.loads(line)["status"]
+        for line in (project / "requirement-burnup" / "state" / "findings.jsonl")
+        .read_text(encoding="utf-8").splitlines() if line.strip()
+    }
+    assert findings[fid] == "open", "la condizione persiste: il finding deve tornare aperto"
+
+
+def test_waiver_survives_the_refresh(project: Path, cli):
+    """Il contrario del test precedente: il waiver e' una decisione umana a
+    termine e NON deve essere riaperto finche' non scade."""
+    cli("init")
+    _, out, _ = cli("refresh", "--json", "--strict", expect=ExitCode.QUALITY_GATE_FAILED)
+    fid = json.loads(out)["blocking_findings"][0]["finding_id"]
+
+    cli("finding", "waive", fid, "--actor", "cto", "--reason", "accettato",
+        "--expires", "2099-01-01T00:00:00Z")
+    cli("refresh")
+
+    findings = {
+        json.loads(line)["finding_id"]: json.loads(line)["status"]
+        for line in (project / "requirement-burnup" / "state" / "findings.jsonl")
+        .read_text(encoding="utf-8").splitlines() if line.strip()
+    }
+    assert findings[fid] == "waived"
 
 
 def test_expired_waiver_reopens_automatically(project: Path, cli):

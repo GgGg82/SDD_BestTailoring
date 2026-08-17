@@ -5,6 +5,7 @@ Ultimo aggiornamento: YYYY-MM-DD HH:MM
 
 **Classe di change:** _____ (Fast Track | Standard | High-Risk)
 **Motivazione della classe:** _____
+> Dichiarala anche all'engine: `burnup feature class <NNN-feature> <classe> --actor <chi> --reason <perché>`.
 > Vedi `docs/SCALE-ADAPTIVE-FLOW.md`. Fast Track salta i Gate 2 e 3, ma NON riduce
 > tracciabilità, test obbligatori né `refresh --strict` prima del Gate 4.
 > La classe può essere promossa in corsa, mai retrocessa.

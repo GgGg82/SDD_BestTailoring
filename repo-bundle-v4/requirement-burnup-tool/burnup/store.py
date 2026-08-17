@@ -30,7 +30,12 @@ from .errors import InvariantError, LockError, StoreError
 from .gates import GateDecision
 from .models import Decision, Finding, Relation, Requirement, TestDefinition, TestRun
 
-SCHEMA_VERSION = "2.0"
+# 3.0: `TestDefinition` porta `requirement_fingerprints` (C-02). Uno store 2.0
+# non ha quel campo, e interpretarlo come "nessun vincolo" significherebbe
+# considerare valide per sempre proprio le verifiche di cui non ci si puo'
+# fidare. Meglio rifiutarsi di aprirlo: e' la stessa regola che l'engine
+# applica gia' a qualunque schema sconosciuto.
+SCHEMA_VERSION = "3.0"
 
 STATE_DIRNAME = "state"
 REPORTS_DIRNAME = "reports"
@@ -200,7 +205,14 @@ class Store:
         if found and found != SCHEMA_VERSION:
             raise StoreError(
                 f"Il canonical store e' allo schema {found}, l'engine richiede {SCHEMA_VERSION}.",
-                hint="Esegui 'burnup migrate' per aggiornare lo store.",
+                # C-05: non promettere una migrazione che non esiste. Finche'
+                # non c'e' un comando reale, il suggerimento deve essere
+                # eseguibile: ricreare lo store, o tornare a una revisione
+                # compatibile.
+                hint=(
+                    "Ricrea lo store con 'burnup init --reset' — la storia degli snapshot "
+                    "viene persa — oppure ripristina da Git una revisione compatibile."
+                ),
             )
 
     def load(self) -> StoreData:

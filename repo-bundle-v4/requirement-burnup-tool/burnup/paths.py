@@ -79,7 +79,12 @@ def resolve_under_root(project_root: Path, raw_path: str, *, field: str) -> Path
     parts = PurePosixPath(text.replace("\\", "/")).parts
     depth = 0
     for part in parts:
-        if part in (".", ""):
+        # `PurePosixPath.parts` normalizza gia' via i segmenti neutri: `out/./x`
+        # e `out//x` danno entrambi ('out', 'x'). La guardia resta perche' il
+        # confinamento non deve dipendere da un dettaglio di pathlib, ma non e'
+        # raggiungibile — e dichiararlo e' piu' onesto che costruire un test
+        # che finge di arrivarci.
+        if part in (".", ""):  # pragma: no cover - normalizzato da PurePosixPath
             continue
         if part == "..":
             depth -= 1

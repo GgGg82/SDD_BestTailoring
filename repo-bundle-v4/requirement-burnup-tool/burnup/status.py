@@ -30,6 +30,37 @@ class FreshnessVerdict:
     reason: str = ""
 
 
+#: Lunghezza minima perche' un prefisso di SHA valga come identita'. E' la
+#: soglia storica di Git per un'abbreviazione non ambigua.
+_MIN_ABBREV = 7
+
+
+def stessa_revisione(a: str, b: str) -> bool:
+    """Due riferimenti Git indicano lo stesso commit.
+
+    L'engine legge la propria revisione con `git rev-parse --short HEAD`, che
+    produce sette caratteri. Il sidecar di un report la dichiara con la forma
+    che ha usato la pipeline, e la forma canonica — `git rev-parse HEAD`,
+    quella che si ottiene senza flag — ne produce quaranta.
+
+    Confrontarle per uguaglianza di stringa faceva fallire la policy
+    `current-revision` su commit identici. Riprodotto in simulazione: il
+    rilievo diceva "eseguito su e8d3138e4915..., la revisione corrente e'
+    e8d3138" — lo stesso commit, presentato come se fossero due.
+
+    Il confronto e' per prefisso, che e' il modo in cui Git stesso tratta le
+    abbreviazioni, con una lunghezza minima perche' `e8d3` non basti a
+    dichiarare un'identita'.
+    """
+    a, b = (a or "").strip().lower(), (b or "").strip().lower()
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    corto, lungo = (a, b) if len(a) <= len(b) else (b, a)
+    return len(corto) >= _MIN_ABBREV and lungo.startswith(corto)
+
+
 def evaluate_freshness(run: TestRun, ctx: StatusContext) -> FreshnessVerdict:
     """Stabilisce se un'esecuzione conta come verifica valida *adesso*.
 
@@ -65,7 +96,7 @@ def evaluate_freshness(run: TestRun, ctx: StatusContext) -> FreshnessVerdict:
             )
         if run.revision_origin == "unknown":
             return FreshnessVerdict(False, "l'origine della revisione dichiarata non e' verificabile")
-        if run.source_revision != ctx.current_revision:
+        if not stessa_revisione(run.source_revision, ctx.current_revision):
             return FreshnessVerdict(
                 False,
                 f"eseguito su {run.source_revision}, la revisione corrente e' {ctx.current_revision}",
@@ -265,5 +296,50 @@ def compute_status(
                     state = "tested"
 
         req.lifecycle_state = state
+
+        # -- requisito attivo non verificato ------------------------------
+        #
+        # Chiude C-01, trovato nel collaudo end-to-end del 2026-08-06.
+        #
+        # Tutti i finding sopra vivono dentro un ramo: `incomplete-tasks`
+        # richiede evidenza di codice, `tasks-complete-without-code-evidence`
+        # richiede i task completi, e l'intero blocco `tested` — quindi anche
+        # `missing-mandatory-test` — e' annidato dentro `implemented`. Restava
+        # scoperto proprio il caso piu' elementare: il requisito su cui nessuno
+        # ha lavorato, che cadeva fuori da ogni ramo in silenzio. Verificato:
+        # una feature con meta' dei requisiti mai implementati superava tutti e
+        # quattro i gate con zero finding aperti.
+        #
+        # Non era una questione di severita': senza finding, nessuna soglia di
+        # `strict_blocks_on` poteva intercettarlo.
+        #
+        # Questo e' quindi il segnale UNIFORME su cui il Gate 4 si misura — gli
+        # altri finding restano come spiegazione del perche'. Uniforme perche'
+        # il gate deve poter dipendere da una sola condizione, indipendente
+        # dalla causa; `high` perche' deve bloccare in tutte le classi di
+        # change, non solo in High-Risk.
+        #
+        # La via d'uscita non e' nuova ed e' quella che il framework aveva gia':
+        # `burnup finding waive` per rinviare, `burnup requirement remove` per
+        # togliere dal perimetro. Entrambe registrano attore e motivo, quindi il
+        # rinvio resta possibile ma non silenzioso.
+        if state != "tested":
+            findings.append(
+                make_finding(
+                    severity="high",
+                    finding_type="requirement-not-verified",
+                    subject=req.key,
+                    subject_type="requirement",
+                    feature_id=req.feature_id,
+                    description=(
+                        f"Requisito attivo fermo a '{state}': non esiste evidenza che sia stato verificato."
+                    ),
+                    recommended_action=(
+                        "Completa task, evidenza di codice e test obbligatori. "
+                        "Per rinviarlo consapevolmente: 'burnup finding waive' con motivo, "
+                        "oppure 'burnup requirement remove' se e' fuori perimetro."
+                    ),
+                )
+            )
 
     return findings

@@ -30,6 +30,40 @@ from .models import Finding
 # Ordine dei gate e artefatto che ciascuno mette sotto baseline.
 GATE_SEQUENCE = (1, 2, 3, 4)
 
+# Classi di change (docs/SCALE-ADAPTIVE-FLOW.md), in ordine crescente di rigore.
+#
+# C-10: il documento e' normativo e prescrive per Fast Track "Gate: 1 e 4", ma
+# l'engine non aveva alcuna nozione di classe: la sequenza era sempre 1-2-3-4 e
+# il Gate 4 risultava irraggiungibile senza i Gate 2 e 3. La classe viveva solo
+# in `progress.md`, dichiarata dall'Orchestratore, e nessun meccanismo la
+# leggeva.
+#
+# Cio' che scala e' il numero di gate e di artefatti, MAI il rigore della
+# misurazione: tracciabilita', test obbligatori e `refresh --strict` prima del
+# Gate 4 valgono identici in tutte le classi, ed e' garantito dal fatto che il
+# finding `requirement-not-verified` e' `high` e non configurabile.
+CHANGE_CLASSES = ("fast-track", "standard", "high-risk")
+DEFAULT_CHANGE_CLASS = "standard"
+
+GATES_BY_CLASS: dict[str, tuple[int, ...]] = {
+    "fast-track": (1, 4),
+    "standard": (1, 2, 3, 4),
+    "high-risk": (1, 2, 3, 4),
+}
+
+
+def gates_for(change_class: str) -> tuple[int, ...]:
+    return GATES_BY_CLASS.get(change_class, GATE_SEQUENCE)
+
+
+def is_promotion(attuale: str, nuova: str) -> bool:
+    """La promozione e' ammessa in corsa, la retrocessione no.
+
+    Retrocedere significherebbe rimuovere un controllo dopo aver visto cosa
+    avrebbe trovato.
+    """
+    return CHANGE_CLASSES.index(nuova) >= CHANGE_CLASSES.index(attuale)
+
 GATE_NAMES = {
     1: "Requirements Baseline",
     2: "Solution Baseline",
@@ -163,6 +197,7 @@ def check_entry_criteria(
     states: dict[int, GateState],
     current_fingerprints: dict[str, str],
     blocking_findings: list[Finding],
+    change_class: str = DEFAULT_CHANGE_CLASS,
 ) -> list[str]:
     """Ritorna l'elenco dei criteri di ingresso non soddisfatti.
 
@@ -175,8 +210,19 @@ def check_entry_criteria(
     if gate not in GATE_SEQUENCE:
         raise ConfigError(f"Gate '{gate}' sconosciuto. Valori ammessi: {', '.join(map(str, GATE_SEQUENCE))}.")
 
-    previous = gate - 1
-    if previous in GATE_SEQUENCE:
+    # Il predecessore e' il gate precedente NELLA SEQUENZA DELLA CLASSE, non
+    # `gate - 1`: in Fast Track il Gate 4 segue direttamente il Gate 1.
+    sequenza = gates_for(change_class)
+    if gate not in sequenza:
+        unmet.append(
+            f"il Gate {gate} ({GATE_NAMES[gate]}) non fa parte della classe '{change_class}': "
+            f"gate previsti {', '.join(map(str, sequenza))}"
+        )
+        return unmet
+
+    posizione = sequenza.index(gate)
+    if posizione > 0:
+        previous = sequenza[posizione - 1]
         prev_state = states.get(previous)
         if prev_state is None or prev_state.status != "valid":
             status = prev_state.status if prev_state else "not-approved"
@@ -202,12 +248,32 @@ def check_entry_criteria(
     return unmet
 
 
-def format_gate_report(feature_id: str, states: dict[int, GateState]) -> list[str]:
-    """Righe leggibili per la CLI."""
-    lines = [f"Gate della feature '{feature_id}':"]
+def format_gate_report(
+    feature_id: str, states: dict[int, GateState], change_class: str = ""
+) -> list[str]:
+    """Righe leggibili per la CLI.
+
+    La classe di change compare qui perche' decide **quali gate esistono**: su
+    una Fast Track i Gate 2 e 3 non vanno attraversati. Senza dirlo, l'elenco
+    li mostrava come `not-approved` accanto agli altri, cioe' come lavoro
+    ancora da fare — e la stessa informazione risultava corretta in `--json`
+    (campo `change_class`) e assente nella vista che legge una persona.
+    Trovato in simulazione su progetto reale, 2026-08-09.
+    """
+    previsti = set(gates_for(change_class)) if change_class else set(GATE_SEQUENCE)
+    intestazione = f"Gate della feature '{feature_id}':"
+    if change_class:
+        elenco = ", ".join(str(g) for g in sorted(previsti))
+        intestazione += f"  [classe: {change_class} — gate previsti: {elenco}]"
+    lines = [intestazione]
     symbol = {"valid": "✓", "invalidated": "⚠", "not-approved": "·", "rejected": "✗"}
     for gate in GATE_SEQUENCE:
         state = states[gate]
+        if gate not in previsti:
+            lines.append(
+                f"  – Gate {gate} — {GATE_NAMES[gate]}: non previsto in classe '{change_class}'"
+            )
+            continue
         head = f"  {symbol.get(state.status, '?')} Gate {gate} — {GATE_NAMES[gate]}: {state.status}"
         if state.decision and state.status != "not-approved":
             head += f" (approvato da {state.decision.approver} il {state.decision.approved_at})"

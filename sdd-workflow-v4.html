@@ -142,9 +142,9 @@
 
 <header class="hero">
   <div class="wrap">
-    <p class="eyebrow">SDD Governance · v4.0.0-beta.1 · framework generico</p>
+    <p class="eyebrow">SDD Governance · v4.0.0-rc.2 · framework generico</p>
     <h1>Flusso Operativo SDD Multi-Agente + Spec Kit</h1>
-    <p class="lead">Sei agenti specialistici, quattro phase gate con invalidazione automatica, e una misurazione dei requisiti che retrocede quando l'evidenza decade. Questa versione corregge tre errori di sequenza della v3 che rendevano due gate approvabili senza che nulla fosse stato verificato.</p>
+    <p class="lead">Sei agenti specialistici, quattro phase gate con invalidazione automatica, e una misurazione dei requisiti che retrocede quando l'evidenza decade. La beta.1 aveva già corretto gli errori di sequenza della v3 che rendevano due gate approvabili senza verifica — ma un collaudo indipendente sull'engine ha trovato la stessa classe di difetto riprodotta al suo interno. 18 difetti in totale, tutti corretti in questa rc.1.</p>
 
     <div class="legend">
       <span class="badge"><span class="dot maker"></span>Maker — produce</span>
@@ -396,13 +396,17 @@ flowchart LR
     IMP -->|"test obbligatori pass<br/>+ evidenza fresca"| TES
     TES -.->|"test fallisce<br/>o evidenza stantia"| IMP
     IMP -.->|"marcatore rimosso<br/>o task riaperto"| DEF
-    TES -.->|"testo del requisito RISCRITTO"| DEF
+    TES -.->|"testo del requisito RISCRITTO<br/><i>decade la sola evidenza di test</i>"| IMP
     DEF -->|"burnup requirement remove<br/>attore + motivo"| REM
       </pre>
     </div>
 
     <div class="callout" style="border-left-color:var(--checker);">
       <strong>Il difetto più grave della v3, riprodotto in audit.</strong> Un requisito trasformato da «autenticare l'utente» a «cancellare tutti i dati al logout», con <code>tasks.md</code> cancellato e marcatore rimosso dal codice, restava <code>tested</code> <strong>con zero rilievi</strong>. La causa non era un errore di calcolo: l'evidenza era legata alla <em>chiave</em> del requisito, che non cambia mai. In v4 è legata al <strong>fingerprint del contenuto</strong>, quindi decade da sola.
+    </div>
+
+    <div class="callout">
+      <strong>Le tre evidenze non decadono allo stesso modo.</strong> <code>implemented-by</code> (da <code>tasks.md</code>) e <code>evidenced-by</code> (dai commenti nel codice) sono ri-derivate ad ogni refresh: se il file cita ancora l'ID, la relazione si ricrea — modificare un file è già un atto umano. <code>verified-by</code> no: <em>«TEST-001 verifica FR-001»</em> è una decisione registrata e riguarda il requisito <strong>com'era scritto allora</strong>, quindi resta vincolata al fingerprint di quel momento. Riscrivere un requisito lo riporta perciò a <code>implemented</code>, non a <code>defined</code>: decade la verifica, non l'implementazione. Il dettaglio è in <code>docs/STATUS-RULES.md</code>.
     </div>
 
     <h3>Canonical store</h3>
@@ -444,9 +448,10 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
         <tr class="role-checker"><td class="step-id">1</td><td>errore di configurazione</td><td>correggi il file; nessun artefatto è stato scritto</td></tr>
         <tr class="role-checker"><td class="step-id">2</td><td>quality gate fallito</td><td>risolvi i findings, oppure registra un waiver motivato</td></tr>
         <tr class="role-human"><td class="step-id">3</td><td>errore di engine</td><td>è un bug: segnalalo, non aggirarlo</td></tr>
+        <tr class="role-burnup"><td class="step-id">4</td><td>errore d'uso</td><td>hai sbagliato la riga di comando, non il progetto: correggi l'invocazione</td></tr>
       </tbody>
     </table>
-    <p class="section-note">Una pipeline decide dal solo exit code, senza fare parsing dello stderr. Nella v3 <code>refresh</code> restituiva <code>0</code> anche con findings di severità <code>high</code>: nessuna CI poteva bloccare in modo deterministico.</p>
+    <p class="section-note">Una pipeline decide dal solo exit code, senza fare parsing dello stderr. Nella v3 <code>refresh</code> restituiva <code>0</code> anche con findings di severità <code>high</code>: nessuna CI poteva bloccare in modo deterministico. Il codice <code>4</code> è distinto dal <code>2</code> perché confonderli farebbe trattare un errore di battitura come un problema del progetto.</p>
   </div>
 </section>
 
@@ -473,6 +478,8 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
     </table>
 
     <p class="section-note">La classe si dichiara all'inizio della feature e si annota in <code>progress.md</code>. <strong>In caso di dubbio si sale, non si scende.</strong> La promozione in corsa è ammessa; la retrocessione no — significherebbe rimuovere un controllo dopo aver visto cosa avrebbe trovato.</p>
+    <pre class="state-file">burnup feature class 001-feature fast-track --actor "lead@team" --reason "correzione di testo, nessun cambio di comportamento"</pre>
+    <p class="section-note">Il comando registra una decisione permanente; <code>burnup gate status</code> riporta la classe nel campo <code>change_class</code>. Nella beta.1 questo comando non esisteva: due documenti normativi prescrivevano il Fast Track, ma l'engine non aveva modo di eseguirlo — è stato il difetto C-10 del collaudo alla rc.1.</p>
   </div>
 </section>
 
@@ -513,14 +520,29 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
       L'audit segnalava che il frontmatter CRLF non veniva riconosciuto. <strong>Verificato: non si riproduce.</strong> <code>Path.read_text()</code> normalizza i newline, quindi nel percorso reale il frontmatter viene parsato correttamente; il probe dell'audit passava una stringa grezza a una funzione interna, che non è come l'engine legge i file. Il difetto adiacente <em>reale</em> era il <strong>BOM UTF-8</strong>, che è stato riclassificato e corretto.
     </div>
 
-    <h3>Stato della v4</h3>
+    <h3>Dalla beta.1 alla rc.1 — collaudo indipendente dell'engine</h3>
+    <div class="callout" style="border-left-color:var(--checker);">
+      <strong>La stessa classe di difetto che ha giustificato la riscrittura dalla v3 è riapparsa nella beta.1, sotto un'altra forma.</strong> Il Gate 4 poteva approvare una feature con metà dei requisiti mai implementati e zero findings; <code>refresh</code> cancellava silenziosamente tutti i Gate Decision Record, rendendo il Gate 4 inapprovabile nel punto esatto in cui la procedura lo richiede. Un collaudo indipendente in tre giri, esteso all'intero bundle — engine, hook, documenti normativi, preset Spec Kit, file agente, CI, template, installazione — ha trovato <strong>18 difetti, tutti corretti</strong>. Nessuno era nella logica dei singoli agenti: tutti nella procedura o nel contratto dichiarato fra le parti.
+    </div>
+    <table>
+      <thead><tr><th>Dove stavano</th><th>Difetti</th><th>Esempio</th></tr></thead>
+      <tbody>
+        <tr class="role-checker"><td>Contratto dichiarato — ciò che il sistema promette per iscritto e non fa</td><td>11 / 18</td><td>Un campo di configurazione documentato, letto, validato, salvato — e mai applicato</td></tr>
+        <tr class="role-burnup"><td>Procedura — visibile solo eseguendo i comandi nell'ordine prescritto</td><td>4 / 18</td><td><code>refresh</code> cancellava i Gate Decision Record: invisibile finché non si segue l'ordine di <code>CLAUDE.md</code></td></tr>
+        <tr class="role-human"><td>Perimetri senza alcun test — l'hook di allowlist del Checker</td><td>2 / 18</td><td>La validazione copriva solo il primo comando di una catena: <code>ls &amp;&amp; npm install &lt;qualunque cosa&gt;</code> passava</td></tr>
+        <tr class="role-gate"><td>Igiene di rilascio</td><td>1 / 18</td><td>Artefatti di build spediti nella cartella distribuita</td></tr>
+      </tbody>
+    </table>
+    <p class="section-note">Undici difetti su diciotto sono emersi prendendo sul serio la documentazione — leggere una promessa scritta e verificare se il codice la mantiene. L'ultimo è stato introdotto durante la correzione stessa: i sei prompt agente lasciati indietro rispetto all'engine appena cambiato, trovato da un test scritto apposta per quello. L'attenzione non scala, un controllo automatico sì. Report completo con riproduzione di ogni difetto: <code>REPORT-COLLAUDO-v4.0.0-rc.2.md</code>.</p>
+
+    <h3>Stato della rc.1</h3>
     <table>
       <thead><tr><th>Verifica</th><th>Esito</th></tr></thead>
       <tbody>
-        <tr class="role-gate"><td>Test automatici</td><td>98 · verdi anche sotto <code>python -O</code></td></tr>
-        <tr class="role-gate"><td>Copertura</td><td>90% (soglia 85%)</td></tr>
-        <tr class="role-gate"><td>Probe dell'audit convertiti in test permanenti</td><td>23 + 8 aggiuntivi</td></tr>
-        <tr class="role-gate"><td>Voci di backlog indirizzate</td><td>58 / 58</td></tr>
+        <tr class="role-gate"><td>Test automatici</td><td>309 · verdi anche sotto <code>python -O</code></td></tr>
+        <tr class="role-gate"><td>Copertura</td><td>100% (soglia bloccante in <code>pyproject.toml</code>)</td></tr>
+        <tr class="role-gate"><td>Difetti aperti</td><td>zero — 18 su 18 corretti</td></tr>
+        <tr class="role-gate"><td>Voci di backlog indirizzate (v3 → beta.1)</td><td>58 / 58</td></tr>
         <tr class="role-gate"><td>Riferimenti a dominio o progetto specifico</td><td>zero — framework generico</td></tr>
         <tr class="role-checker"><td>Tag Spec Kit</td><td>da fissare al primo bootstrap reale</td></tr>
         <tr class="role-checker"><td>Collaudo su repository di produzione</td><td>non ancora eseguito</td></tr>
@@ -531,7 +553,7 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
 
 <footer>
   <div class="wrap">
-    SDD Multi-Agent Framework v4.0.0-beta.1 · documentazione normativa in <code>docs/</code>
+    SDD Multi-Agent Framework v4.0.0-rc.2 · documentazione normativa in <code>docs/</code>
   </div>
 </footer>
 

@@ -38,6 +38,12 @@ Vale anche per il Project Brief. I tuoi artefatti descrivono **esclusivamente** 
 
 `pre-speckit/user-journeys.md` può citare nomi e numeri delle feature. Il percorso inverso non esiste mai: nessun riferimento a `pre-speckit/` dentro `spec.md`, `plan.md` o `tasks.md`. È un requisito di design.
 
+# Riscrivere un requisito ha un costo
+
+Il sistema lega l'evidenza — task, codice, test — al **contenuto** del requisito, non al suo ID. Riformulare per chiarezza non costa nulla: spaziatura, enfasi e punteggiatura vengono assorbite. Ma se cambi ciò che il requisito **chiede**, tutta l'evidenza raccolta decade, il requisito torna indietro da `tested`, e il Business Analyst/QA deve riaffermare e rieseguire i test.
+
+È voluto: un test su "il sistema deve autenticare l'utente" non dimostra nulla su "il sistema deve cancellare tutti i dati al logout". Quindi, quando in un ciclo di ritorno modifichi un requisito già implementato, **dichiaralo esplicitamente all'Orchestratore** invece di lasciarlo scoprire dal refresh: serve rilavorazione a valle, e chi pianifica deve saperlo.
+
 # Altre regole
 
 - Non generi mai `plan.md`, `tasks.md`, né codice.

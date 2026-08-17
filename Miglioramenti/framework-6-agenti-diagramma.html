@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framework SDD Maker-Checker — 6 Agenti (v4) | 123trading</title>
+<style>
+  :root{
+    --bg:#12141a;
+    --surface:#1a1d26;
+    --surface-2:#20232e;
+    --border:#2a2e3a;
+    --text:#e8e9ed;
+    --text-muted:#8b8fa3;
+    --maker:#4fc3f7;
+    --maker-dim:#1b3a4a;
+    --checker:#ffb74d;
+    --checker-dim:#4a3a1b;
+    --gate:#81c784;
+    --gate-dim:#1e3a20;
+    --human:#ba68c8;
+    --human-dim:#3a1b4a;
+    --prespeckit:#4db6ac;
+    --prespeckit-dim:#1b3a37;
+    --burnup:#5c6bc0;
+    --burnup-dim:#242a4a;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Menlo", monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); line-height:1.6;
+    padding:2.5rem 1.25rem 4rem;
+  }
+  .wrap{max-width:920px; margin:0 auto;}
+  .eyebrow{
+    font-family:var(--mono); font-size:0.75rem; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--text-muted); margin-bottom:0.6rem;
+  }
+  h1{font-size:1.65rem; margin:0 0 0.4rem; letter-spacing:-0.01em;}
+  .subtitle{color:var(--text-muted); font-size:0.98rem; max-width:640px; margin-bottom:2.2rem;}
+
+  /* Orchestrator strip */
+  .orchestrator{
+    background:linear-gradient(135deg, var(--surface-2), var(--surface));
+    border:1px solid var(--border); border-radius:10px;
+    padding:1.1rem 1.3rem; margin-bottom:2.4rem;
+    display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+  }
+  .orchestrator .tag{
+    font-family:var(--mono); font-size:0.68rem; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--text); background:var(--surface);
+    border:1px solid var(--border); padding:0.3rem 0.6rem; border-radius:5px;
+    flex-shrink:0;
+  }
+  .orchestrator p{margin:0; font-size:0.88rem; color:var(--text-muted); flex:1; min-width:220px;}
+  .orchestrator code{color:var(--text); font-family:var(--mono); font-size:0.85rem;}
+
+  /* Legend */
+  .legend{display:flex; flex-wrap:wrap; gap:0.55rem; margin-bottom:2.6rem;}
+  .dot{
+    display:inline-flex; align-items:center; gap:0.4rem;
+    font-family:var(--mono); font-size:0.7rem; padding:0.3rem 0.65rem;
+    border-radius:20px; border:1px solid var(--border); color:var(--text-muted);
+  }
+  .dot::before{content:""; width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .dot.maker::before{background:var(--maker);}
+  .dot.checker::before{background:var(--checker);}
+  .dot.gate::before{background:var(--gate);}
+  .dot.human::before{background:var(--human);}
+  .dot.prespeckit::before{background:var(--prespeckit);}
+  .dot.burnup::before{background:var(--burnup);}
+
+  /* Spine layout */
+  .pipeline{position:relative; padding-left:2.1rem;}
+  .pipeline::before{
+    content:""; position:absolute; left:0.55rem; top:0.4rem; bottom:0.4rem;
+    width:2px; background:linear-gradient(var(--border), var(--border));
+  }
+
+  .phase{position:relative; margin-bottom:2.2rem;}
+  .phase-label{
+    display:flex; align-items:center; gap:0.6rem; margin-bottom:0.9rem;
+  }
+  .phase-label::before{
+    content:""; position:absolute; left:-1.65rem; width:12px; height:12px;
+    border-radius:50%; background:var(--surface-2); border:2px solid var(--border);
+  }
+  .phase-num{
+    font-family:var(--mono); color:var(--text-muted); font-size:0.78rem;
+  }
+  .phase-title{font-weight:600; font-size:0.95rem;}
+  .phase-note{
+    font-size:0.8rem; color:var(--text-muted); margin:-0.3rem 0 0.8rem;
+    font-style:italic;
+  }
+
+  .step-row{display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:0.6rem;}
+  .step{
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:0.65rem 0.85rem; flex:1; min-width:210px;
+    border-left:3px solid var(--border);
+  }
+  .step.maker{border-left-color:var(--maker);}
+  .step.checker{border-left-color:var(--checker);}
+  .step.human{border-left-color:var(--human);}
+  .step-id{
+    font-family:var(--mono); color:var(--text-muted); font-size:0.72rem;
+    display:block; margin-bottom:0.25rem;
+  }
+  .step-agent{
+    font-family:var(--mono); font-size:0.78rem; font-weight:600; display:block; margin-bottom:0.2rem;
+  }
+  .step.maker .step-agent{color:var(--maker);}
+  .step.checker .step-agent{color:var(--checker);}
+  .step.human .step-agent{color:var(--human);}
+  .step-desc{font-size:0.83rem; color:var(--text-muted);}
+  .step-desc code{font-family:var(--mono); color:var(--text); font-size:0.79rem;}
+
+  .conditional{
+    font-size:0.76rem; color:var(--text-muted); font-style:italic;
+    padding:0.4rem 0.75rem; border:1px dashed var(--border); border-radius:6px;
+    margin:0.4rem 0;
+  }
+
+  .gate{
+    display:flex; align-items:center; gap:0.6rem; margin:0.7rem 0 0.2rem;
+    background:var(--gate-dim); border:1px solid var(--gate); border-radius:8px;
+    padding:0.55rem 0.9rem;
+  }
+  .gate-badge{
+    font-family:var(--mono); font-size:0.72rem; font-weight:700; color:var(--gate);
+    letter-spacing:0.05em;
+  }
+  .gate-desc{font-size:0.8rem; color:var(--text-muted);}
+
+  .loopback{
+    font-size:0.76rem; color:var(--checker); background:var(--checker-dim);
+    border:1px solid var(--checker); border-radius:6px; padding:0.45rem 0.75rem;
+    margin:0.5rem 0;
+  }
+
+  .extension .phase-label::before{background:var(--prespeckit-dim); border-color:var(--prespeckit);}
+  .extension.burnup-phase .phase-label::before{background:var(--burnup-dim); border-color:var(--burnup);}
+  .step.prespeckit{border-left-color:var(--prespeckit);}
+  .step.prespeckit .step-agent{color:var(--prespeckit);}
+  .step.burnup{border-left-color:var(--burnup);}
+  .step.burnup .step-agent{color:var(--burnup);}
+
+  .artifact-line{
+    font-family:var(--mono); font-size:0.75rem; color:var(--text-muted);
+    margin-top:0.3rem;
+  }
+  .artifact-line b{color:var(--text); font-weight:500;}
+
+  /* Agent table */
+  h2{font-size:1.15rem; margin:3rem 0 1rem; letter-spacing:-0.01em;}
+  table{width:100%; border-collapse:collapse; font-size:0.83rem; margin-bottom:1rem;}
+  th, td{text-align:left; padding:0.55rem 0.7rem; border-bottom:1px solid var(--border);}
+  th{
+    font-family:var(--mono); font-weight:600; font-size:0.72rem;
+    text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);
+  }
+  td.agent-name{font-family:var(--mono); font-size:0.82rem;}
+  td.role-maker{color:var(--maker);}
+  td.role-checker{color:var(--checker);}
+  td.steps{font-family:var(--mono); font-size:0.76rem; color:var(--text-muted);}
+
+  footer{
+    padding-top:2.5rem; text-align:center; color:var(--text-muted);
+    font-size:0.8rem; font-family:var(--mono); border-top:1px solid var(--border); margin-top:2rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">123trading — SDD Governance</div>
+  <h1>Framework Maker-Checker a 6 agenti</h1>
+  <p class="subtitle">Vista strutturale del framework così com'è oggi: orchestratore, sei agenti specialistici, quattro gate e tre estensioni. Nessuna proposta in stand-by è rappresentata qui.</p>
+
+  <div class="orchestrator" style="border-color:var(--gate); background:var(--gate-dim);">
+    <span class="tag" style="border-color:var(--gate); color:var(--gate);">Baseline</span>
+    <p style="color:var(--text);"><b>v4.0.0-beta.1</b> — verificata sui file reali di <code>repo-bundle-v4/</code>. Sostituisce la vista precedente, che descriveva la v3 e riportava <code>/speckit.analyze</code> in tre punti, due dei quali non validi. Le differenze rispetto alla v3 sono marcate <span style="color:var(--gate);">▲</span>.</p>
+  </div>
+
+  <div class="orchestrator">
+    <span class="tag">Orchestratore</span>
+    <p><code>CLAUDE.md</code> — sessione principale di Claude Code. Instrada verso l'agente competente ad ogni step, aggiorna <code>progress.md</code>, presidia i 4 Gate. Non esegue mai il lavoro di un agente specialistico.</p>
+  </div>
+
+  <div class="orchestrator">
+    <span class="tag" style="border-color:var(--human); color:var(--human);">▲ Classe di change</span>
+    <p>All'inizio di ogni feature l'Orchestratore dichiara e motiva la classe — <b>Fast Track</b> / <b>Standard</b> / <b>High-Risk</b> — secondo <code>docs/SCALE-ADAPTIVE-FLOW.md</code>, e la annota in <code>progress.md</code>. Scala il <i>numero di artefatti e revisioni</i>, mai il rigore della misurazione. In caso di dubbio si sale, mai si scende. Promozione ammessa in corsa, retrocessione no.</p>
+  </div>
+
+  <div class="legend">
+    <span class="dot maker">Maker</span>
+    <span class="dot checker">Checker</span>
+    <span class="dot gate">Gate (conferma umana)</span>
+    <span class="dot human">Utente umano</span>
+    <span class="dot prespeckit">Estensione — Fase Meno Uno</span>
+    <span class="dot burnup">Estensione — Requirement Burn-up</span>
+  </div>
+
+  <div class="pipeline">
+
+    <div class="phase extension">
+      <div class="phase-label">
+        <span class="phase-num">FASE −1</span>
+        <span class="phase-title">Pre-Spec Kit</span>
+      </div>
+      <div class="phase-note">Estensione — vive in <code style="font-family:var(--mono)">pre-speckit/</code>, separata da <code style="font-family:var(--mono)">.specify/</code></div>
+      <div class="step-row">
+        <div class="step prespeckit">
+          <span class="step-id">−1.1 · una tantum, prima feature del progetto</span>
+          <span class="step-agent">@product-manager</span>
+          <span class="step-desc">Scrive <code>project-brief.md</code>: visione, problema, utenti, obiettivi, rischi e assunzioni di prodotto.</span>
+        </div>
+        <div class="step prespeckit">
+          <span class="step-id">−1.2 · prima di ogni nuova feature</span>
+          <span class="step-agent">@product-manager</span>
+          <span class="step-desc">Verifica/aggiorna <code>user-journeys.md</code>, documento vivo trasversale alle feature.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">
+        <span class="phase-num">FASE 0</span>
+        <span class="phase-title">Bootstrap</span>
+      </div>
+      <div class="phase-note">▲ Una tantum <b>per progetto</b>, non per feature — nella v3 era erroneamente uno step per-feature</div>
+      <div class="step-row">
+        <div class="step maker">
+          <span class="step-id">0.1 · una tantum nella vita del progetto</span>
+          <span class="step-agent">@solutions-architect</span>
+          <span class="step-desc"><code>specify init</code>. La creazione della feature avviene invece con <code>/speckit.specify</code> allo step 1.1.</span>
+        </div>
+        <div class="step maker">
+          <span class="step-id">0.2</span>
+          <span class="step-agent">@solutions-architect</span>
+          <span class="step-desc">Constitution redatta/verificata — livello repo, non per-feature.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">
+        <span class="phase-num">FASE 1</span>
+        <span class="phase-title">Requisiti — il COSA</span>
+      </div>
+      <div class="step-row">
+        <div class="step maker">
+          <span class="step-id">1.1</span>
+          <span class="step-agent">@product-manager</span>
+          <span class="step-desc"><code>/speckit.specify</code> — scrive <code>spec.md</code>.</span>
+        </div>
+        <div class="step checker">
+          <span class="step-id">1.2</span>
+          <span class="step-agent">@business-analyst-qa ↔ @product-manager</span>
+          <span class="step-desc"><code>/speckit.clarify</code> — domande di chiarimento, risposte del PM.</span>
+        </div>
+        <div class="step checker">
+          <span class="step-id">1.3</span>
+          <span class="step-agent">@business-analyst-qa</span>
+          <span class="step-desc">Checklist requisiti → <code>checklists/requirements.md</code>.</span>
+        </div>
+      </div>
+      <div class="gate">
+        <span class="gate-badge">GATE 1</span>
+        <span class="gate-desc">L'utente conferma esplicitamente prima di procedere.</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">
+        <span class="phase-num">FASE 2</span>
+        <span class="phase-title">Piano tecnico — il COME</span>
+      </div>
+      <div class="step-row">
+        <div class="step maker">
+          <span class="step-id">2.1</span>
+          <span class="step-agent">@solutions-architect</span>
+          <span class="step-desc"><code>/speckit.plan</code> — scrive <code>plan.md</code>.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step checker">
+          <span class="step-id">2.2</span>
+          <span class="step-agent">@business-analyst-qa</span>
+          <span class="step-desc">Checklist tecnica → <code>checklists/plan.md</code>.</span>
+        </div>
+        <div class="step checker">
+          <span class="step-id">2.2-risk</span>
+          <span class="step-agent">@business-analyst-qa</span>
+          <span class="step-desc">Intervista rischi tecnici → <code>risk-register.md</code>.</span>
+        </div>
+      </div>
+      <div class="loopback">⚠ Se una mitigazione decisa in 2.2-risk richiede modifiche a <code style="font-family:var(--mono)">spec.md</code> (il COSA), la feature torna a Fase 1 / Gate 1 — non resta in Fase 2.</div>
+      <div class="conditional">2.1-loop (condizionale) — @solutions-architect aggiorna <code style="font-family:var(--mono)">plan.md</code> in risposta a rischi mitigati. N/A se nessuna mitigazione tocca il piano.</div>
+      <div class="loopback" style="color:var(--gate); background:var(--gate-dim); border-color:var(--gate);">▲ <b>Lo step 2.3 non esiste più.</b> Nella v3 invocava <code style="font-family:var(--mono)">/speckit.analyze</code> qui, ma il comando richiede <code style="font-family:var(--mono)">tasks.md</code> completo, che in Fase 2 non esiste ancora: il Gate 2 poteva risultare PASS senza che nulla fosse stato verificato.</div>
+      <div class="gate">
+        <span class="gate-badge">GATE 2</span>
+        <span class="gate-desc">Approvazione della baseline di soluzione. Esito presentato include sia checklist tecnica sia risk register.</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">
+        <span class="phase-num">FASE 3</span>
+        <span class="phase-title">Task</span>
+      </div>
+      <div class="step-row">
+        <div class="step maker">
+          <span class="step-id">3.1</span>
+          <span class="step-agent">@tech-lead</span>
+          <span class="step-desc"><code>/speckit.tasks</code> — scompone <code>plan.md</code> in <code>tasks.md</code>. ▲ <b>Requirement Key obbligatori</b> in ogni task.</span>
+        </div>
+        <div class="step checker">
+          <span class="step-id">3.2</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc">▲ <code>/speckit.analyze</code> — <b>l'unica invocazione valida in tutto il flusso</b>: spec vs plan vs tasks vs constitution.</span>
+        </div>
+      </div>
+      <div class="gate">
+        <span class="gate-badge">GATE 3</span>
+        <span class="gate-desc">Approvazione della prontezza all'implementazione.</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">
+        <span class="phase-num">FASE 4</span>
+        <span class="phase-title">Codifica e collaudo</span>
+      </div>
+      <div class="step-row">
+        <div class="step maker">
+          <span class="step-id">4.1</span>
+          <span class="step-agent">@software-engineer</span>
+          <span class="step-desc">Implementazione del codice sui task assegnati.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step checker">
+          <span class="step-id">4.2</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc">▲ <b>Verifica indipendente del codice</b> — lint, analisi statica, esecuzione test, conformità alla constitution, via Bash. Nella v3 era un <code>/speckit.analyze</code>, che il codice non lo ispeziona affatto.</span>
+        </div>
+        <div class="step checker">
+          <span class="step-id">4.3</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc"><code>/speckit.converge</code> — confronta stato reale con spec/plan/tasks.</span>
+        </div>
+      </div>
+      <div class="conditional">▲ 4.3-review (condizionale) — se <code style="font-family:var(--mono)">converge</code> aggiunge task, <b>@tech-lead li approva prima</b> che vengano implementati. È l'unica eccezione dichiarata al Maker–Checker: l'Auditor scriverebbe task che poi valuterebbe lui stesso.</div>
+      <div class="conditional">4.4-loop (condizionale) — @software-engineer implementa i task aggiunti. N/A se converged al primo giro.</div>
+      <div class="step-row">
+        <div class="step checker">
+          <span class="step-id">▲ 4.5</span>
+          <span class="step-agent">@business-analyst-qa</span>
+          <span class="step-desc">Collaudo funzionale sugli scenari di accettazione.</span>
+        </div>
+        <div class="step burnup">
+          <span class="step-id">▲ burnup refresh --strict</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc"><b>PRIMA</b> dell'approvazione del Gate 4, non dopo. Exit code 2 in presenza di finding bloccanti: il Gate non è approvabile.</span>
+        </div>
+      </div>
+      <div class="gate">
+        <span class="gate-badge">GATE 4</span>
+        <span class="gate-desc">Approvazione della prontezza al rilascio. ▲ Non approvabile se esistono finding bloccanti.</span>
+      </div>
+    </div>
+
+    <div class="phase extension burnup-phase">
+      <div class="phase-label">
+        <span class="phase-num">TRASVERSALE</span>
+        <span class="phase-title">Requirement Burn-up</span>
+      </div>
+      <div class="phase-note">Non legato al ciclo di una singola feature — layer continuo sull'intero progetto</div>
+      <div class="loopback" style="color:var(--gate); background:var(--gate-dim); border-color:var(--gate);">▲ <b>Il Markdown non è più il database.</b> La fonte di verità è il canonical store in <code style="font-family:var(--mono)">requirement-burnup/state/</code>, versionato; i file in <code style="font-family:var(--mono)">reports/</code> sono proiezioni rigenerabili che l'engine non rilegge mai e che nessuno modifica a mano.</div>
+      <div class="step-row">
+        <div class="step burnup">
+          <span class="step-id">burnup refresh --strict · prima di ogni Gate 4</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc">Aggiorna gli stati <code>defined → implemented → tested</code>. L'evidenza è legata al <b>fingerprint del contenuto</b> del requisito: se il testo cambia, decade da sola.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step burnup">
+          <span class="step-id">burnup init · una tantum</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc">Crea il canonical store ed esegue la prima scansione.</span>
+        </div>
+        <div class="step burnup">
+          <span class="step-id">burnup status · on-demand</span>
+          <span class="step-agent">@technical-auditor</span>
+          <span class="step-desc">Sola lettura. ▲ Riporta anche la <b>freschezza</b>: <code>fresh</code> / <code>stale</code> / <code>unknown</code>.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step burnup">
+          <span class="step-id">▲ decisioni umane · comando + record permanente</span>
+          <span class="step-agent">burnup test define · confirm-manual · link confirm</span>
+          <span class="step-desc"><code>requirement remove</code> · <code>finding waive</code> · <code>finding close</code>. Ogni decisione registra attore, motivo e revisione. Nella v3 l'unico modo era editare a mano la tabella generata, cioè l'operazione che la documentazione vietava.</span>
+        </div>
+      </div>
+      <div class="artifact-line">Output → <b>traceability-matrix.md</b> · <b>test-register.md</b> · <b>governance-dashboard.md</b> in <code style="font-family:var(--mono)">requirement-burnup/reports/</code> — generati, mai riletti</div>
+    </div>
+
+    <div class="phase extension burnup-phase">
+      <div class="phase-label">
+        <span class="phase-num">▲ TRASVERSALE</span>
+        <span class="phase-title">Stato dei gate — state machine, non prosa</span>
+      </div>
+      <div class="phase-note">Lo stato dei gate non vive in <code style="font-family:var(--mono)">progress.md</code>: quella è una vista leggibile</div>
+      <div class="step-row">
+        <div class="step burnup">
+          <span class="step-id">burnup gate status | approve | reject</span>
+          <span class="step-agent">Gate Decision Record</span>
+          <span class="step-desc">L'approvazione registra fingerprint degli artefatti approvati, finding aperti, waiver, condizioni, rationale. <code>--force</code> non nasconde i criteri non soddisfatti: li scrive e marca la decisione <code>conditionally-approved</code>.</span>
+        </div>
+        <div class="step burnup">
+          <span class="step-id">invalidazione automatica</span>
+          <span class="step-agent">confronto fingerprint</span>
+          <span class="step-desc">Cambia <code>spec.md</code> → decadono i Gate 1-4; <code>plan.md</code> → 2-4; <code>tasks.md</code> → 3-4; codice/test → 4. Non è una procedura da ricordare, è un confronto.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">
+        <span class="phase-num">FASE 5</span>
+        <span class="phase-title">Release</span>
+      </div>
+      <div class="step-row">
+        <div class="step human">
+          <span class="step-id">5.1</span>
+          <span class="step-agent">Utente umano</span>
+          <span class="step-desc">Merge su main.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>I sei agenti</h2>
+  <table>
+    <thead>
+      <tr><th>Agente</th><th>Ruolo</th><th>Modello</th><th>Step di competenza</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="agent-name">@product-manager</td><td class="role-maker">Maker</td><td class="steps">sonnet</td><td class="steps">−1.1, −1.2, 1.1, 1.2 (risposta)</td></tr>
+      <tr><td class="agent-name">@solutions-architect</td><td class="role-maker">Maker</td><td class="steps">opus</td><td class="steps">0.1, 0.2, 2.1, 2.1-loop</td></tr>
+      <tr><td class="agent-name">@tech-lead</td><td class="role-maker">Maker</td><td class="steps">sonnet</td><td class="steps">3.1, 4.3-review</td></tr>
+      <tr><td class="agent-name">@software-engineer</td><td class="role-maker">Maker</td><td class="steps">sonnet</td><td class="steps">4.1, 4.4-loop</td></tr>
+      <tr><td class="agent-name">@business-analyst-qa</td><td class="role-checker">Checker</td><td class="steps">sonnet</td><td class="steps">1.2 (domande), 1.3, 2.2, 2.2-risk, 4.5</td></tr>
+      <tr><td class="agent-name">@technical-auditor</td><td class="role-checker">Checker</td><td class="steps">opus</td><td class="steps">3.2, 4.2, 4.3, burnup-*</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.82rem; color:var(--text-muted); margin-top:-0.4rem;">▲ La colonna <b>Modello</b> è letta dal frontmatter reale dei sei file in <code style="font-family:var(--mono)">.claude/agents/</code>. Non esiste alcun campo <code style="font-family:var(--mono)">effort</code>: la calibrazione oggi configurabile è solo quella del modello.</p>
+
+  <h2>Le due regole MUST</h2>
+  <table>
+    <tbody>
+      <tr><td><b>Chi verifica non produce ciò che verifica.</b></td><td>Unica eccezione dichiarata: <code style="font-family:var(--mono)">/speckit.converge</code>, che appende task poi approvati dal Tech Lead allo step 4.3-review.</td></tr>
+      <tr><td><b>Separazione perfetta tra COSA e COME.</b></td><td><code style="font-family:var(--mono)">spec.md</code> non contiene mai dettagli tecnici; <code style="font-family:var(--mono)">plan.md</code> e il codice non decidono mai requisiti di business.</td></tr>
+    </tbody>
+  </table>
+
+  <footer>123trading — SDD Governance Framework · baseline v4.0.0-beta.1 verificata sui file reali · riallineato il 6 agosto 2026</footer>
+
+</div>
+</body>
+</html>

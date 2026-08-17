@@ -31,6 +31,17 @@ Ciò che scala è il **numero di artefatti e di revisioni**, non il rigore della
 
 La classe è **dichiarata dall'Orchestratore all'inizio della feature** e registrata in `progress.md`. La scelta è motivata, non implicita.
 
+Va dichiarata anche all'engine, altrimenti resta una nota in un file che nessun controllo legge:
+
+```bash
+burnup feature class <NNN-feature> fast-track|standard|high-risk \
+    --actor <chi> --reason <perché>
+```
+
+Il comando registra una decisione permanente con attore e motivo, e da quel momento `burnup gate approve` conosce la sequenza di gate della classe. Senza dichiarazione la classe è **Standard**, cioè il default prudente.
+
+> Fino al collaudo del 2026-08-07 l'engine ignorava del tutto le classi: la sequenza era sempre 1-2-3-4, e il Gate 4 di una Fast Track risultava inapprovabile perché "il Gate 3 non è valido". Questo documento prescriveva un flusso che il sistema vietava.
+
 Domande, in ordine. **Una sola risposta affermativa promuove alla classe superiore:**
 
 1. Tocca autenticazione, autorizzazione, crittografia o segreti? → High-Risk
@@ -47,7 +58,7 @@ Nessuna affermativa → Fast Track.
 
 ## Promozione in corsa
 
-Una feature può essere promossa in qualunque momento, mai retrocessa. Se durante l'implementazione emerge che una Fast Track tocca l'autenticazione:
+Una feature può essere promossa in qualunque momento, mai retrocessa. La retrocessione viene **rifiutata dall'engine**, non solo sconsigliata. Se durante l'implementazione emerge che una Fast Track tocca l'autenticazione:
 
 1. l'Orchestratore promuove la classe e lo annota in `progress.md` con il motivo;
 2. i gate saltati diventano **richiesti** e vanno approvati prima di procedere;

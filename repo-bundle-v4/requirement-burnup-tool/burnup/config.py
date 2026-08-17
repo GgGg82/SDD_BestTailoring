@@ -131,7 +131,11 @@ def load_config(config_path: Path, project_root: Path) -> BurnupConfig:
     if schema_version != CONFIG_SCHEMA_VERSION:
         raise ConfigError(
             f"schema_version '{schema_version}' non e' compatibile con questo engine (richiesto {CONFIG_SCHEMA_VERSION}).",
-            hint="Esegui 'burnup migrate-config' oppure aggiorna il file dal template corrente.",
+            # C-05: `burnup migrate-config` non esiste.
+            hint=(
+                "Aggiorna il file da requirement-burnup-config.template.yml: parti da "
+                "schema_version, ma confronta anche i campi, perche' lo schema e' cambiato."
+            ),
         )
 
     # -- output -----------------------------------------------------------

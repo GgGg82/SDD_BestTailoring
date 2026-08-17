@@ -244,6 +244,78 @@ def test_evaluate_gates_ignores_other_features():
     assert evaluate_gates("f", decisions, {"spec": "fp1"})[1].status == "not-approved"
 
 
+# --------------------------------------------------------------------------
+# C-03: `refresh` non deve distruggere le approvazioni
+# --------------------------------------------------------------------------
+
+def test_refresh_preserves_gate_decisions(project: Path, cli):
+    """C-03, trovato nel collaudo end-to-end del 2026-08-06.
+
+    `engine.py` costruiva lo StoreData del refresh senza riportare
+    `gate_decisions` — mentre `decisions` veniva riportato — quindi `commit`
+    riscriveva `gate-decisions.jsonl` vuoto. Ogni `burnup refresh` cancellava
+    tutte le approvazioni.
+
+    Non era un difetto marginale: `CLAUDE.md` impone `burnup refresh --strict`
+    PRIMA di ogni approvazione del Gate 4. Seguendo la procedura documentata,
+    quel refresh azzerava i Gate 1-3 e il Gate 4 diventava inapprovabile
+    perche' "il Gate 3 non e' valido". La state machine risultava inutilizzabile
+    esattamente nel percorso per cui era stata scritta.
+
+    Si vedeva solo approvando i quattro gate di fila senza refresh in mezzo, che
+    e' l'unico ordine in cui i test esistenti la esercitavano.
+    """
+    cli("init")
+    _plan(project)
+    _approve_through(cli, 3)
+
+    _, before, _ = cli("gate", "status", "001-demo", "--json")
+    assert all(json.loads(before)["gates"][str(g)]["status"] == "valid" for g in (1, 2, 3))
+
+    cli("refresh")
+
+    _, after, _ = cli("gate", "status", "001-demo", "--json")
+    gates = json.loads(after)["gates"]
+    assert all(gates[str(g)]["status"] == "valid" for g in (1, 2, 3)), (
+        "un refresh non modifica gli artefatti approvati: le decisioni devono sopravvivere"
+    )
+
+    raw = (project / "requirement-burnup" / "state" / "gate-decisions.jsonl").read_text(encoding="utf-8")
+    assert len([line for line in raw.splitlines() if line.strip()]) == 3
+
+
+def test_documented_gate_4_procedure_is_executable(project: Path, cli, commit):
+    """La procedura di `CLAUDE.md`: refresh --strict, poi approvazione del Gate 4."""
+    tasks = project / "specs" / "001-demo" / "tasks.md"
+    tasks.write_text(
+        "# Task\n\n"
+        "- [x] T001 [REQ:FR-001] Implement auth in src/auth.py\n"
+        "- [x] T002 [REQ:NFR-001] Tune latency in src/auth.py\n",
+        encoding="utf-8",
+    )
+    (project / "src" / "auth.py").write_text(
+        '"""Auth."""\n'
+        "# REQ: 001-demo/FR-001\n"
+        "def auth():\n    return True\n\n"
+        "# REQ: 001-demo/NFR-001\n"
+        "def fast():\n    return True\n",
+        encoding="utf-8",
+    )
+    cli("init")
+    _plan(project)
+    for req, test_id in (("001-demo/FR-001", "TEST-001"), ("001-demo/NFR-001", "TEST-002")):
+        cli("test", "define", test_id, "--actor", "ba-qa", "--reason", "collaudo",
+            "--requirement", req, "--definition", f"verifica {req}", "--mandatory")
+        cli("test", "confirm-manual", test_id, "--actor", "ba-qa", "--reason", "eseguito",
+            "--result", "pass", "--evidence", "verbale")
+    cli("refresh")
+    commit("feature completa")
+    _approve_through(cli, 3)
+
+    cli("refresh", "--strict")          # obbligatorio prima del Gate 4
+    cli("gate", "approve", "001-demo", "4", "--actor", "cto@team", "--reason", "rilascio")
+
+
 def test_check_entry_criteria_rejects_unknown_gate():
     from burnup.errors import ConfigError
     with pytest.raises(ConfigError):

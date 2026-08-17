@@ -152,6 +152,20 @@ class TestDefinition:
     environment: str = ""
     notes: str = ""
 
+    # Fingerprint di ciascun requisito al momento in cui il test e' stato
+    # dichiarato verificarlo. Chiude C-02.
+    #
+    # Senza questo campo la relazione `verified-by` veniva ricostruita ad ogni
+    # refresh con il fingerprint corrente, quindi non poteva mai risultare
+    # stantia: riscrivere un requisito da "autenticare l'utente" a "cancellare
+    # tutti i dati al logout" lo lasciava `tested`, verificato da un test
+    # eseguito sul testo precedente.
+    #
+    # La dichiarazione "TEST-001 verifica FR-001" e' una decisione umana, e
+    # riguarda il requisito com'era scritto in quel momento. Qui quel momento
+    # viene registrato.
+    requirement_fingerprints: dict = field(default_factory=dict)
+
     def to_json(self) -> dict:
         return _clean(asdict(self))
 
@@ -162,6 +176,7 @@ class TestDefinition:
         if isinstance(mandatory, str):
             d["mandatory"] = mandatory.strip().lower() in ("yes", "true", "y", "1", "si", "sì")
         d["requirement_keys"] = list(d.get("requirement_keys", []))
+        d["requirement_fingerprints"] = dict(d.get("requirement_fingerprints", {}))
         known = TestDefinition.__dataclass_fields__.keys()
         return TestDefinition(**{k: v for k, v in d.items() if k in known})
 
