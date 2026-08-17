@@ -142,7 +142,7 @@
 
 <header class="hero">
   <div class="wrap">
-    <p class="eyebrow">SDD Governance · v4.0.0-rc.2 · framework generico</p>
+    <p class="eyebrow">SDD Governance · v4.0.0-rc.3 · framework generico</p>
     <h1>Flusso Operativo SDD Multi-Agente + Spec Kit</h1>
     <p class="lead">Sei agenti specialistici, quattro phase gate con invalidazione automatica, e una misurazione dei requisiti che retrocede quando l'evidenza decade. La beta.1 aveva già corretto gli errori di sequenza della v3 che rendevano due gate approvabili senza verifica — ma un collaudo indipendente sull'engine ha trovato la stessa classe di difetto riprodotta al suo interno. 18 difetti in totale, tutti corretti in questa rc.1.</p>
 
@@ -183,13 +183,15 @@ flowchart TD
     classDef gate fill:#1e3a20,stroke:#81c784,color:#e8e9ed
     classDef human fill:#3a1b4a,stroke:#ba68c8,color:#e8e9ed
     classDef pre fill:#1b3a37,stroke:#4db6ac,color:#e8e9ed
+    classDef opt fill:#161f1e,stroke:#4db6ac,color:#9fb3b0,stroke-dasharray: 6 4
     classDef burn fill:#242a4a,stroke:#5c6bc0,color:#e8e9ed
 
     START([Nuova feature]):::human
 
     subgraph FM1["Fase -1 · Pre-Spec Kit"]
+        PRE0["-1.0 Brainstorming<br/><i>opzionale · su raccomandazione</i><br/>@product-manager"]:::opt
         S11["-1.1 Project Brief<br/><i>una tantum per progetto</i><br/>@product-manager"]:::pre
-        S12["-1.2 User Journeys<br/><i>prima di ogni feature</i><br/>@product-manager"]:::pre
+        S12["-1.2 User Journeys<br/><i>Fast Track: verifica ridotta</i><br/>@product-manager"]:::pre
     end
 
     subgraph F0["Fase 0 · Bootstrap — una tantum"]
@@ -231,6 +233,8 @@ flowchart TD
     G4{{"GATE 4 · Release Readiness"}}:::gate
     REL(["5.1 Merge / rilascio"]):::human
 
+    START -. "se raccomandato" .-> PRE0
+    PRE0 -.-> S11
     START --> S11 --> S12 --> S01 --> S02 --> S1 --> S2 --> S3 --> G1
     G1 -->|PASS| S4
     G1 -.->|FAIL| S1
@@ -268,14 +272,15 @@ flowchart TD
         <tr><th>Step</th><th>Chi</th><th>Cosa</th><th>Output</th></tr>
       </thead>
       <tbody>
+        <tr class="role-prespeckit"><td class="step-id">-1.0 <span class="tag-new">rc.3</span></td><td class="chi">@product-manager</td><td>Brainstorming — l'esplorazione che precede la formalizzazione. <strong>Opzionale e ripetibile:</strong> l'Orchestratore raccomanda, l'utente decide. L'agente <strong>facilita, non genera</strong>. Uno step saltato si annota <code>saltato (motivo, attore)</code>, mai lasciato vuoto.</td><td><code>brainstorming/&lt;data&gt;-&lt;tema&gt;.md</code></td></tr>
         <tr class="role-prespeckit"><td class="step-id">-1.1</td><td class="chi">@product-manager</td><td>Project Brief — visione, problema, obiettivi, perimetro MVP. <strong>Una tantum per progetto.</strong></td><td><code>project-brief.md</code></td></tr>
-        <tr class="role-prespeckit"><td class="step-id">-1.2</td><td class="chi">@product-manager</td><td>User journeys — documento vivo, verificato prima di ogni feature. Obbligatorio.</td><td><code>user-journeys.md</code></td></tr>
+        <tr class="role-prespeckit"><td class="step-id">-1.2</td><td class="chi">@product-manager</td><td>User journeys — documento vivo, verificato prima di ogni feature. Richiesto in Standard e High-Risk; in Fast Track <strong>verifica ridotta</strong> <span class="tag-new">rc.3</span>: se la feature non ricade su un passo già mappato, la verifica fallisce e lo step va fatto per intero.</td><td><code>user-journeys.md</code></td></tr>
 
         <tr class="role-maker"><td class="step-id">0.1 <span class="tag-new">v4</span></td><td class="chi">@solutions-architect</td><td><code>specify init</code> — <strong>una sola volta nella vita del progetto</strong>. Nella v3 era erroneamente uno step per-feature.</td><td><code>.specify/</code></td></tr>
         <tr class="role-maker"><td class="step-id">0.2</td><td class="chi">@solutions-architect</td><td><code>/speckit.constitution</code> — principi di progetto. È qui che vive il contesto tecnologico specifico.</td><td><code>constitution.md</code></td></tr>
 
         <tr class="role-maker"><td class="step-id">1.1</td><td class="chi">@product-manager</td><td><code>/speckit.specify</code> — crea la feature e la specifica funzionale. Solo il COSA.</td><td><code>spec.md</code></td></tr>
-        <tr class="role-checker"><td class="step-id">1.2</td><td class="chi">@business-analyst-qa</td><td><code>/speckit.clarify</code> — ambiguità, casi limite, requisiti privi di metrica.</td><td><code>spec.md</code> raffinata</td></tr>
+        <tr class="role-checker"><td class="step-id">1.2</td><td class="chi">@business-analyst-qa</td><td><code>/speckit.clarify</code> — ambiguità, casi limite, requisiti privi di metrica. Include il <strong>corner-case sweep</strong> <span class="tag-new">rc.3</span>: dodici categorie di condizione limite, cinque in Standard e tutte in High-Risk, con risposta esplicita per categoria.</td><td><code>spec.md</code> raffinata</td></tr>
         <tr class="role-checker"><td class="step-id">1.3</td><td class="chi">@business-analyst-qa</td><td><code>/speckit.checklist</code> scope requisiti.</td><td><code>checklists/requirements.md</code></td></tr>
         <tr class="role-gate"><td class="step-id">GATE 1</td><td class="chi">utente umano</td><td><code>burnup gate approve &lt;feature&gt; 1</code> — congela la baseline dei requisiti.</td><td>Gate Decision Record</td></tr>
 
@@ -468,6 +473,9 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
       <thead><tr><th></th><th>Fast Track</th><th>Standard</th><th>High-Risk</th></tr></thead>
       <tbody>
         <tr class="role-maker"><td class="chi">Quando</td><td>correzione di difetto, testo, configurazione, refactoring senza cambio di comportamento</td><td>tutto il resto — <strong>default</strong></td><td>sicurezza, dati personali, denaro, irreversibilità, contratti esterni</td></tr>
+        <tr class="role-prespeckit"><td class="chi">-1.0 brainstorming <span class="tag-new">rc.3</span></td><td>non richiesto</td><td>facoltativo, su raccomandazione</td><td>facoltativo, raccomandato</td></tr>
+        <tr class="role-prespeckit"><td class="chi">-1.2 user journeys <span class="tag-new">rc.3</span></td><td><strong>verifica ridotta</strong></td><td>richieste</td><td>richieste + revisione degli scoperti</td></tr>
+        <tr class="role-checker"><td class="chi">corner-case sweep <span class="tag-new">rc.3</span></td><td>non richiesto</td><td>5 categorie</td><td>12 categorie</td></tr>
         <tr class="role-gate"><td class="chi">Gate</td><td><strong>1 e 4</strong></td><td>1 · 2 · 3 · 4</td><td>1 · 2 · 3 · 4 + revisione di sicurezza</td></tr>
         <tr class="role-maker"><td class="chi"><code>plan.md</code></td><td>non richiesto</td><td>richiesto</td><td>richiesto + revisione architetturale indipendente</td></tr>
         <tr class="role-checker"><td class="chi">Risk register</td><td>non richiesto</td><td>richiesto</td><td>+ contingency e rischio residuo per ogni voce</td></tr>
@@ -553,7 +561,7 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
 
 <footer>
   <div class="wrap">
-    SDD Multi-Agent Framework v4.0.0-rc.2 · documentazione normativa in <code>docs/</code>
+    SDD Multi-Agent Framework v4.0.0-rc.3 · documentazione normativa in <code>docs/</code>
   </div>
 </footer>
 

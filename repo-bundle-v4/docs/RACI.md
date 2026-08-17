@@ -1,6 +1,6 @@
 # RACI — Responsibility Assignment Matrix
 
-**Versione:** 2.0 · **Stato:** normativo
+**Versione:** 2.1 · **Stato:** normativo
 
 Chiude P2-04 dell'audit: i ruoli erano descritti, ma nessun documento diceva chi è responsabile di cosa, chi approva, chi va consultato.
 

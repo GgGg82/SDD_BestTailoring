@@ -1,6 +1,6 @@
 # SCALE-ADAPTIVE-FLOW — Classi di change
 
-**Versione:** 2.0 · **Stato:** normativo
+**Versione:** 2.1 · **Stato:** normativo
 
 Chiude P2-03 dell'audit: nella v3 ogni modifica, anche minima, attraversava l'intero processo a quattro gate. Un processo che costa più del lavoro che governa non viene seguito — viene aggirato, e a quel punto non governa più nulla.
 

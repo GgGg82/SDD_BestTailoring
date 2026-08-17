@@ -2,7 +2,7 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/). Versionamento semantico.
 
-## [Non rilasciato]
+## [4.0.0-rc.3] — 2026-08-14
 
 Tre miglioramenti presi dalla cartella `Miglioramenti/`. Nessuno tocca i controlli P0: tracciabilità, evidenza fingerprinted, test obbligatori, path confinement e `refresh --strict` restano identici.
 
@@ -27,6 +27,12 @@ Tre miglioramenti presi dalla cartella `Miglioramenti/`. Nessuno tocca i control
 - **`progress.md`**: uno step di Fase -1 non eseguito si annota `saltato (motivo, attore)`. Mai vuoto, mai spuntato: un vuoto si legge come dimenticanza, una spunta mente.
 
 - **`docs/RACI.md`**: nuove righe per l'artefatto di brainstorming e per la decisione di saltare uno step della Fase -1.
+
+### Corretto
+
+- **Il CLI dichiarava una versione falsa.** `burnup --version` stampava `4.0.0-beta.1` mentre `pyproject.toml` era già a `4.0.0rc2`: la stringa in `cli.py` non era mai stata allineata. Non è cosmetico — `INSTALL.md` §1 chiede di registrare nella matrice di compatibilità la versione **verificata**, e chi la leggeva da `--version` ci scriveva un numero sbagliato. La disciplina del pin poggiava su un dato che il sistema riportava scorretto. Trovato eseguendo il framework su un progetto reale.
+
+**Perché `rc.3` e non `4.1.0`.** La `4.0.0` non è mai stata rilasciata: le release candidate sono incrementi *verso* quella versione, non sopra di essa. Aggiungere funzionalità prima del rilascio non rompe alcun contratto pubblicato, perché non ne esiste ancora uno. È la stessa logica con cui la `rc.1` non è diventata una `5.0.0`.
 
 
 ## [4.0.0-rc.2] — 2026-08-09
