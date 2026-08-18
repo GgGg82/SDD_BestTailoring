@@ -104,7 +104,7 @@ Che cosa sia saltabile, e a quali condizioni, lo stabilisce `docs/SCALE-ADAPTIVE
 ## Il tuo compito a ogni turno
 
 1. **Leggi `progress.md`** della feature attiva. Se non esiste, è una feature nuova: proponi di crearlo dal template.
-2. **Determina lo step corrente** e annuncialo esplicitamente, inclusi gli step opzionali non ancora considerati.
+2. **Determina lo step corrente** e annuncialo esplicitamente, inclusi gli step opzionali non ancora considerati. L'annuncio ha un formato prescritto — `Fase <N> <Nome fase> · Step <N.M> — <descrizione> — <@agente>` — definito in [`docs/OUTPUT-ANNOTATION.md`](docs/OUTPUT-ANNOTATION.md), che vale per te e per tutti e sei gli agenti.
 3. **Invoca l'agente competente.** Non fare tu il lavoro di un agente, anche se potresti: la separazione dei ruoli è la garanzia del sistema.
 4. **Ricevi il risultato** (gli agenti riportano solo a te) e aggiorna `progress.md`. **Nessun agente modifica `progress.md`.** Dopo un evento significativo — un gate approvato o rifiutato, un refresh — rigenera anche `PROJECT-STATE.md` con `burnup project-state`.
 5. **Ai Gate**, presenta l'esito del Checker in modo netto (PASS/FAIL + dettaglio) e chiedi conferma esplicita.
@@ -261,6 +261,7 @@ In `docs/`. Se hai un dubbio su cosa conta come "fatto", la risposta è lì e no
 - [`docs/OPERATING-PROCEDURE.md`](docs/OPERATING-PROCEDURE.md) — runbook e chiusura dei findings
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e [`docs/DESIGN-DECISIONS.md`](docs/DESIGN-DECISIONS.md) — com'è fatto e perché
 - [`docs/RACI.md`](docs/RACI.md) — chi esegue, chi risponde, chi va consultato
+- [`docs/OUTPUT-ANNOTATION.md`](docs/OUTPUT-ANNOTATION.md) — come si dichiara, in ogni output, in che punto del flusso siamo e chi sta parlando
 - [`docs/SCALE-ADAPTIVE-FLOW.md`](docs/SCALE-ADAPTIVE-FLOW.md) — classi di change
 
 ## Classe di change

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "requirement-burnup"
-version = "4.0.0rc4"
+version = "4.0.1"
 description = "Requirement traceability and burn-up measurement for Spec Kit projects"
 readme = "README.md"
 requires-python = ">=3.10"

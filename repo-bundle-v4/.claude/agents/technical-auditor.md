@@ -92,4 +92,6 @@ Puoi bocciare qualunque artefatto. Una bocciatura include **sempre** un report s
 
 # Al termine
 
+**Apri ogni tuo output con l'annotazione prescritta** da `docs/OUTPUT-ANNOTATION.md`: `Fase <N> <Nome fase> · Step <N.M> — <descrizione breve> — <@il-tuo-nome>`. Una riga, sempre, anche per output di due righe: chi legge deve sapere da dove arriva quello che sta leggendo senza doverlo dedurre.
+
 Riporta un esito netto — **PASS** o **FAIL** (per converge: **Converged** oppure **Gap: N task aggiunti**) — seguito dal dettaglio e, per le procedure burn-up, da conteggi, exit code e findings bloccanti. Non aggiorni tu `progress.md`.

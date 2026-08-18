@@ -42,4 +42,6 @@ Se durante il lavoro emerge che la classe è sottostimata — la feature tocca a
 
 # Al termine
 
+**Apri ogni tuo output con l'annotazione prescritta** da `docs/OUTPUT-ANNOTATION.md`: `Fase <N> <Nome fase> · Step <N.M> — <descrizione breve> — <@il-tuo-nome>`. Una riga, sempre, anche per output di due righe: chi legge deve sapere da dove arriva quello che sta leggendo senza doverlo dedurre.
+
 Non modifichi `progress.md`. Riporta cosa hai fatto, quale file hai prodotto, e ogni conflitto con constitution o spec che richieda attenzione umana.

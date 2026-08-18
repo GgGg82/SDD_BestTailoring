@@ -142,7 +142,7 @@
 
 <header class="hero">
   <div class="wrap">
-    <p class="eyebrow">SDD Governance · v4.0.0-rc.4 · framework generico</p>
+    <p class="eyebrow">SDD Governance · v4.0.1 · framework generico</p>
     <h1>Flusso Operativo SDD Multi-Agente + Spec Kit</h1>
     <p class="lead">Sei agenti specialistici, quattro phase gate con invalidazione automatica, e una misurazione dei requisiti che retrocede quando l'evidenza decade. La beta.1 aveva già corretto gli errori di sequenza della v3 che rendevano due gate approvabili senza verifica — ma un collaudo indipendente sull'engine ha trovato la stessa classe di difetto riprodotta al suo interno. 18 difetti in totale, tutti corretti in questa rc.1.</p>
 
@@ -265,6 +265,10 @@ flowchart TD
 <section id="step">
   <div class="wrap">
     <h2><span class="num">02</span> Tabella degli step</h2>
+    <div class="callout" style="border-left-color:var(--human);">
+      <strong>Ogni output dichiara da dove arriva <span class="tag-new">4.0.1</span></strong> — nella forma <code>Fase &lt;N&gt; &lt;Nome fase&gt; · Step &lt;N.M&gt; — &lt;descrizione&gt; — &lt;@agente&gt;</code>.<br/>
+      Non è cosmesi: lo stesso contenuto si valuta con criteri opposti a seconda che venga da un <span class="role-maker" style="padding:0 .3em">Maker</span> o da un <span class="role-checker" style="padding:0 .3em">Checker</span>. Senza l'annotazione chi riprende una sessione dopo giorni lo deduce dal contenuto — e una deduzione sbagliata non produce un errore visibile, produce un'approvazione mal fondata. Norma in <code>docs/OUTPUT-ANNOTATION.md</code>.
+    </div>
     <p class="section-note">Chi fa cosa, con quale comando, e quale artefatto produce. Gli step marcati <span class="tag-new">v4</span> sono nuovi o corretti rispetto alla versione precedente.</p>
 
     <table>
@@ -599,7 +603,7 @@ burnup project-state                                  # rigenera PROJECT-STATE.m
 
 <footer>
   <div class="wrap">
-    SDD Multi-Agent Framework v4.0.0-rc.4 · documentazione normativa in <code>docs/</code>
+    SDD Multi-Agent Framework v4.0.1 · documentazione normativa in <code>docs/</code>
   </div>
 </footer>
 

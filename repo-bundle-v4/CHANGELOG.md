@@ -2,6 +2,38 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/). Versionamento semantico.
 
+## [4.0.1] — 2026-08-18
+
+### Aggiunto
+
+- **`docs/OUTPUT-ANNOTATION.md`** — convenzione normativa: ogni output dichiara in una riga in che punto del flusso siamo e chi sta parlando, nella forma `Fase <N> <Nome fase> · Step <N.M> — <descrizione> — <@agente>`.
+
+  **Non è un requisito nuovo.** `CLAUDE.md` prescrive dalla v3 che l'Orchestratore *«determini lo step corrente e lo annunci esplicitamente»*. Mancavano tre cose: un formato, l'identità dell'agente, e più di un custode. Erano quelle a renderlo inefficace — la prescrizione esisteva e nessuno la vedeva.
+
+  Il costo dell'assenza non è estetico: chi riprende una sessione dopo giorni ricostruisce step e attore dal contenuto, e quella ricostruzione silenziosa porta a valutare un artefatto con i criteri dello step sbagliato, o ad attribuire a un Checker un giudizio prodotto da un Maker. Non produce un fallimento visibile — produce un'approvazione mal fondata.
+
+  Decisioni chiuse rispetto alla proposta: i **Gate si attribuiscono all'Orchestratore** e non al Checker (l'esito è del Checker, la richiesta di conferma è dell'Orchestratore, e confonderle annullerebbe proprio la distinzione che Maker–Checker esiste per mantenere); un output che attraversa due attori **si spezza** invece di accorparsi; gli attori non-agente hanno etichette convenute (`Orchestratore`, `Utente umano`).
+
+  La regola è ripetuta nella sezione *Al termine* di **tutti e sei** gli agenti, non solo nel prompt dell'Orchestratore. Una convenzione di presentazione non viene abbandonata con una decisione: decade, un'omissione alla volta. Nessun singolo attore ne è l'unico custode.
+
+  Criterio di efficacia dichiarato: se dopo l'adozione chi legge non riesce a dire «in che step siamo e chi ha prodotto l'ultimo output» senza scorrere all'indietro, la convenzione va **ritirata**, non rifinita.
+
+### Corretto
+
+- `INSTALL.md` dichiarava «9 file» in `docs/` quando erano 10. Ora sono 11 ed è scritto giusto.
+
+---
+
+## [4.0.0] — 2026-08-18
+
+**Promozione a stabile di `4.0.0-rc.4`, senza alcuna modifica di contenuto.**
+
+Le release candidate `rc.1`–`rc.4` erano incrementi verso la 4.0.0 e sono convergute: il contenuto della 4.0.0 è quello dell'ultima candidate. Continuare a chiamarla *release candidate* mentre il framework governa lavoro reale sarebbe stato disonesto nella direzione opposta a quella che le pre-release servono a evitare — non «non è ancora pronta», ma «non lo dichiariamo mai».
+
+Da qui in avanti il versionamento è quello ordinario: patch per correzioni e convenzioni, minor per funzionalità, major solo per rotture rispetto a questa 4.0.0 — che ora, a differenza di prima, **esiste davvero**.
+
+---
+
 ## [4.0.0-rc.4] — 2026-08-18
 
 ### Aggiunto

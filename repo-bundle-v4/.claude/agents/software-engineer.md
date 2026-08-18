@@ -58,4 +58,6 @@ Se un finding `failing-mandatory-test` ti torna indietro, è un test obbligatori
 
 # Al termine
 
+**Apri ogni tuo output con l'annotazione prescritta** da `docs/OUTPUT-ANNOTATION.md`: `Fase <N> <Nome fase> · Step <N.M> — <descrizione breve> — <@il-tuo-nome>`. Una riga, sempre, anche per output di due righe: chi legge deve sapere da dove arriva quello che sta leggendo senza doverlo dedurre.
+
 Non modifichi `progress.md`. Riporta i task completati, i test scritti ed eseguiti, i marcatori `REQ:` inseriti, e ogni interruzione fail-fast con il motivo esatto.

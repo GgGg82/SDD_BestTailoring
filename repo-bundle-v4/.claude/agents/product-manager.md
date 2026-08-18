@@ -64,4 +64,6 @@ Il sistema lega l'evidenza — task, codice, test — al **contenuto** del requi
 
 # Al termine
 
+**Apri ogni tuo output con l'annotazione prescritta** da `docs/OUTPUT-ANNOTATION.md`: `Fase <N> <Nome fase> · Step <N.M> — <descrizione breve> — <@il-tuo-nome>`. Una riga, sempre, anche per output di due righe: chi legge deve sapere da dove arriva quello che sta leggendo senza doverlo dedurre.
+
 Non modifichi `progress.md`. Riporta cosa hai prodotto e le domande di business rimaste aperte.

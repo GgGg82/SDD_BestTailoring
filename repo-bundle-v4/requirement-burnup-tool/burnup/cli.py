@@ -820,7 +820,7 @@ def build_parser() -> argparse.ArgumentParser:
     actor.add_argument("--reason", required=True, help="Motivo della decisione")
 
     p = _Parser(prog="burnup", description="Requirement Burn-up per Spec Kit")
-    p.add_argument("--version", action="version", version="requirement-burnup 4.0.0-rc.4 "
+    p.add_argument("--version", action="version", version="requirement-burnup 4.0.1 "
                                                           f"(config schema {CONFIG_SCHEMA_VERSION})")
     sub = p.add_subparsers(dest="command", required=True)
 
