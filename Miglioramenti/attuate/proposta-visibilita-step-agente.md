@@ -2,7 +2,7 @@
 
 **ID proposta:** G
 **Framework di riferimento:** 4.0.0-rc.2
-**Stato:** formalizzata, non implementata
+**Stato:** ✅ attuata in 4.0.1
 **Data:** 2026-08-14 · **Rev:** 2 (aggiunto il nome della fase)
 **Origine:** emersa durante il test di utilizzo reale del framework sul progetto LLM Wiki
 
@@ -12,7 +12,13 @@
 
 `CLAUDE.md`, sezione *«Il tuo compito a ogni turno»*, punto 2, prescrive già:
 
-> «**Determina lo step corrente** e annuncialo esplicitamente, inclusi gli step opzionali non ancora considerati.»
+> ## ✅ ATTUATA in 4.0.1 — `docs/OUTPUT-ANNOTATION.md`
+>
+> Norma in un solo file; istruzione ripetuta nella sezione *Al termine* di tutti e sei gli agenti, perché una convenzione di presentazione non viene abbandonata con una decisione — decade, un'omissione alla volta.
+>
+> Punti chiusi in fase di implementazione: **G2** (output che attraversa due attori → si spezza), **G3** (l'annotazione non è una seconda fonte di verità), **G4** (regola replicata sui sei agenti), **G5** (`Orchestratore` e `Utente umano` come etichette convenute).
+
+---
 
 L'obbligo esiste. Questa proposta **non lo introduce**: ne chiude tre lacune di attuazione. Il ridimensionamento è deliberato — una proposta che si presenta come nuova funzionalità quando è una precisazione di una regola esistente gonfia il proprio valore percepito.
 

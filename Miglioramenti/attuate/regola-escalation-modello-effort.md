@@ -2,7 +2,7 @@
 
 **ID proposta:** B
 **Framework di riferimento:** 4.0.0-rc.3
-**Stato:** riscritta, pronta per l'implementazione
+**Stato:** ✅ **ATTUATA in 4.0.0** — `CLAUDE.md`, sezione *Quando un ciclo non converge*
 **Data:** 2026-08-18 · **Rev:** 2
 **Sostituisce:** la stesura v3 «Escalation spot di modello/effort per Software Engineer», la cui premessa tecnica è stata verificata e in parte smentita.
 

@@ -1,19 +1,17 @@
 # Proposta: Percorso Snello vs Percorso Completo — Routing per complessità del task
 
-> ## ⛔ SUPERATA — non implementare
+> ## ✅ ATTUATA — `docs/SCALE-ADAPTIVE-FLOW.md`
 >
-> **Baseline del documento:** v3 (`sdd-agenti-orchestratore-v3.zip`) · **Baseline reale del repository:** v4.0.0-beta.1
-> **Verificato il:** 2026-08-06 su `repo-bundle-v4/docs/SCALE-ADAPTIVE-FLOW.md`
+> Implementata in forma più forte di quanto proposto: tre classi invece di due percorsi, sette criteri invece di tre, promozione in corsa con retrocessione vietata dall'engine.
 >
-> La v4 implementa già questo meccanismo, in forma più forte: **tre** classi (Fast Track / Standard / High-Risk) invece di due percorsi, **sette** criteri invece di tre, con soglie esplicite su autenticazione, dati personali, denaro, irreversibilità e contratti esterni. In più prevede la **promozione in corsa con retrocessione vietata**, che questa proposta non contemplava, e vincola i controlli P0 (tracciabilità, test obbligatori, `refresh --strict`) a non ridursi mai.
+> Il pezzo da recuperare che il banner precedente segnalava — il **criterio di coerenza multi-punto** — è stato innestato nella domanda 7 in **4.0.0**, insieme alla guardia contro il criterio basato sull'importanza del file.
 >
-> **Da recuperare comunque:** la formulazione raffinata del **Criterio 3** (sezione 3) — *"quante cose devono restare coerenti tra loro dopo la modifica"*, non *"il file toccato è importante"* — è più precisa della domanda 7 di v4 (*"tocca più di due requisiti esistenti"*) e vale come chiarimento da innestare in `SCALE-ADAPTIVE-FLOW.md`. Il Caso C della sezione 4 ne è la giustificazione.
->
-> Dettaglio in `ANALISI-CROSS-CHECK-MIGLIORAMENTI.md`.
+> **Nulla resta da fare.** Il documento è conservato come storia del ragionamento.
 
 ---
 
-**Stato originario dichiarato: PROPOSTA — non ancora implementata nel framework. In stand-by su decisione esplicita dell'utente.**
+
+**Stato originario dichiarato (superato): PROPOSTA — non ancora implementata.** Attuata in 4.0.0. In stand-by su decisione esplicita dell'utente.**
 
 **Destinatario di questo documento:** un'istanza AI (Claude Code o altro agente) incaricata in futuro di valutare e/o implementare questa modifica al framework di governance SDD a 6 agenti già esistente. Questo documento è autosufficiente: contiene contesto, razionale, criteri esatti ed esempi già validati, così da poter essere letto senza dover recuperare la cronologia delle conversazioni che lo hanno prodotto.
 

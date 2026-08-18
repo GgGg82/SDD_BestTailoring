@@ -1,21 +1,19 @@
 # Proposta: Sistema di memoria di progetto — continuità cross-sessione, cross-tool, cross-persona
 
-> ## ✅ VALIDA — con un miglioramento reso possibile dalla v4
+> ## ✅ ATTUATA in 4.0.0 — con la correzione che la rende utile
 >
-> **Baseline del documento:** v3 · **Baseline reale del repository:** v4.0.0-beta.1
-> **Verificato il:** 2026-08-06 — né `AGENTS.md` né `PROJECT-STATE.md` esistono in `repo-bundle-v4/`.
+> `AGENTS.md` è stato creato come proposto. `PROJECT-STATE.md` **no**: è **generato** da `burnup project-state`, non tenuto a mano.
 >
-> È l'unica proposta della cartella **interamente non coperta** dalla v4. Il contenuto resta valido così com'è scritto, con una modifica sostanziale alla sezione 5:
+> La sezione 7 di questo documento riconosceva il proprio rischio principale — *«un file di stato non aggiornato è peggio di non averlo»* — e lo mitigava con la disciplina. Non serviva: quel rischio è la conseguenza di mettere uno **stato** dentro una **vista**, e il framework aveva già deciso il contrario per i gate (`D-010`).
 >
-> **`PROJECT-STATE.md` va *generato*, non scritto a mano.** La proposta prevede che l'orchestratore lo aggiorni ai Gate, e riconosce onestamente (sezione 7) che il rischio principale è la staleness. La v4 offre una soluzione migliore che il documento non poteva conoscere: `burnup gate status` è già la fonte di verità deterministica sullo stato dei gate, con invalidazione automatica per confronto di fingerprint. Le sezioni "feature attiva / fase / gate" vanno quindi generate dall'engine; restano scritte a mano solo "ultimo evento significativo" e "decisioni in attesa dell'utente". Questo è anche coerente col principio architetturale v4 — *il Markdown è una proiezione rigenerabile, mai un database*.
+> In più il comando **deriva il contatore di non-convergenza** dai Gate Decision Record, chiudendo il rischio residuo della proposta B.
 >
-> `AGENTS.md` resta invece esattamente come proposto: la "Nota su Codex CLI" in `CLAUDE.md` è ancora lì come avvertimento passivo.
->
-> Dettaglio in `ANALISI-CROSS-CHECK-MIGLIORAMENTI.md`.
+> **Attenzione, premessa smentita:** la sezione 4 chiedeva di *estendere* la «Nota su Codex CLI» di `CLAUDE.md`. Quella nota **non esisteva più** in v4: la sezione cross-tool è stata scritta da zero.
 
 ---
 
-**Stato originario dichiarato: PROPOSTA — non ancora implementata nel framework.**
+
+**Stato originario dichiarato (superato): PROPOSTA — non ancora implementata.** Attuata in 4.0.0.**
 
 **Destinatario di questo documento:** un'istanza AI (Claude Code, Codex CLI, o altro strumento) incaricata in futuro di valutare e/o implementare questa modifica al framework di governance SDD a 6 agenti. Documento autosufficiente, non richiede la cronologia della conversazione che lo ha prodotto. Dove necessario, questo documento riporta **testualmente** frammenti del `CLAUDE.md` reale del progetto (recuperati e verificati, non ricostruiti a memoria), per ancorare la proposta a ciò che esiste davvero oggi nel repository.
 

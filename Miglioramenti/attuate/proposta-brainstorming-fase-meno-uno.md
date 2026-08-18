@@ -2,7 +2,7 @@
 
 **ID proposta:** H
 **Framework di riferimento:** 4.0.0-rc.2
-**Stato:** formalizzata, non implementata
+**Stato:** ✅ attuata in 4.0.0
 **Data:** 2026-08-14
 **Origine:** emersa durante il test di utilizzo reale del framework sul progetto LLM Wiki
 **Riferimento esterno:** BMad Method v6, Fase di Analisi
@@ -17,7 +17,13 @@ L'esplorazione che li precede — la conversazione in cui si capisce che cosa si
 
 Il framework la nomina una volta sola, e come condotta anziché come fase, nel prompt di `@product-manager`:
 
-> «Se la richiesta è vaga, fai tu le domande giuste **prima** di scrivere la prima versione.»
+> ## ✅ ATTUATA in 4.0.0 — step `-1.0`
+>
+> `CLAUDE.md` (step, criteri di raccomandazione, regola dello skip), prompt di `@product-manager` (responsabilità e regola di facilitazione), `.specify/templates/brainstorming-template.md`, `progress-template.md`, tabella delle classi in `SCALE-ADAPTIVE-FLOW.md`, `docs/RACI.md`.
+>
+> Restano aperti i punti **H1** (facilitare e redigere sono attitudini diverse: BMad usa un agente Analyst distinto dal PM) e **H2** (chi verifica che uno skip fosse legittimo — candidato: il Checker al Gate 1).
+
+---
 
 **Questa è un'eccezione al modo in cui il framework tratta il dialogo ovunque altrove.** Quando il confronto conta, riceve uno step, un proprietario e un artefatto:
 
