@@ -91,4 +91,23 @@ burnup status                    # freschezza della misurazione
 ```
 
 ---
+## Cicli di ritorno e non-convergenza
+
+> Il **secondo rigetto consecutivo sulla stessa causa** fa scattare la regola di non-convergenza (`CLAUDE.md`).
+> Il conteggio va tenuto qui: se vive solo nella sessione, alla ripresa riparte da zero e la regola non scatta mai.
+> Identità della causa: finding ID se il rigetto viene dall'engine, altrimenti ID del requisito o del task.
+
+| Causa | Maker | Checker | Rigetti consecutivi | Esito |
+|---|---|---|:-:|---|
+| | | | | |
+
+**Escalation autorizzate** — una sola per causa.
+
+| Data | Causa | Autorizzata da | Modello richiesto | Modello effettivo | Ha risolto? |
+|---|---|---|---|---|:-:|
+| | | | | | |
+
+> La colonna **modello effettivo** non è burocrazia: `CLAUDE_CODE_SUBAGENT_MODEL` ha precedenza sul parametro per-invocazione, e l'allowlist dell'organizzazione può sostituire il modello. Senza questa colonna un'escalation mai avvenuta risulterebbe eseguita.
+
+---
 Note libere / blocchi in corso:

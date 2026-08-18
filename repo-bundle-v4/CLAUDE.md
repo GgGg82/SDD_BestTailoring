@@ -110,6 +110,50 @@ Che cosa sia saltabile, e a quali condizioni, lo stabilisce `docs/SCALE-ADAPTIVE
 5. **Ai Gate**, presenta l'esito del Checker in modo netto (PASS/FAIL + dettaglio) e chiedi conferma esplicita.
 6. **Se un Gate fallisce**, torna al Maker competente con il feedback preciso. Non correggere tu.
 
+### Quando un ciclo non converge
+
+Il punto 6 dice cosa fare quando un Gate fallisce. Questa regola dice cosa fare quando fallisce **sempre allo stesso modo**.
+
+**Trigger: il secondo rigetto consecutivo dello stesso Checker sulla stessa causa.** L'identità della causa non la stabilisci a giudizio — la leggi da un identificatore:
+
+| Da dove arriva il rigetto | Identità della causa |
+|---|---|
+| `@technical-auditor`, con finding registrato | il **finding ID** (`D-008`: derivato dal contenuto, stabile per costruzione) |
+| `@business-analyst-qa`, o rigetto senza finding | l'**ID del requisito o del task** su cui il rigetto insiste |
+| Nessuno dei due è stabile | **dichiara che non puoi stabilire l'identità** e non far scattare il trigger |
+
+L'ultima riga vale quanto le altre: un trigger che scatta su un'identità inventata è peggio di un trigger che non scatta. Se la causa cambia, il contatore si azzera — due problemi diversi in sequenza non sono un ciclo che non converge.
+
+**Cosa fai:**
+
+1. **Ti fermi.** Non rilanci il Maker con la stessa configurazione: un terzo tentativo identico è lo stesso tentativo.
+2. **Annoti il conteggio in `progress.md`**, con la causa. Un contatore che vive solo nella sessione si azzera alla ripresa, e la regola non scatta mai.
+3. **Presenti all'utente le due ipotesi**, dicendo quale ti sembra più probabile **e perché**:
+   - il **Maker** non ce la fa → un modello più capace può aiutare;
+   - il **Checker** sta chiedendo qualcosa di sbagliato, impossibile o fuori scope → l'escalation peggiora le cose, perché si paga di più per soddisfare una richiesta che non andava soddisfatta.
+
+   Non puoi stabilire tu quale sia vera. Ma presentarne una sola è una scelta travestita da constatazione.
+4. **Proponi, senza scegliere:**
+
+| Opzione | Chi la esegue |
+|---|---|
+| Rilancio con modello superiore, **solo per quella invocazione** | tu |
+| Aumento dell'*extended thinking* | **l'utente**, sulla propria sessione |
+| Revisione del rigetto del Checker | l'utente, con il Checker |
+| Ritorno all'artefatto a monte (`spec.md`, `plan.md`) | tu, verso il Maker competente |
+
+> **Il thinking non è una tua leva.** I subagent ereditano la configurazione di *extended thinking* della conversazione principale e **non esiste alcuna impostazione per singolo subagent**. Puoi cambiare il modello per invocazione; il thinking può cambiarlo solo l'utente, per tutta la sessione. Proporle come un gesto solo prometterebbe qualcosa che il sistema non sa fare.
+
+5. **Se l'utente autorizza l'escalation**, invochi il subagent passando il modello **per quella sola chiamata**. Non modifichi mai il `model` nel frontmatter dell'agente: la calibrazione permanente resta quella che è.
+
+   **Verifica che sia stata applicata davvero.** Due cose la annullano in silenzio: la variabile d'ambiente `CLAUDE_CODE_SUBAGENT_MODEL`, che ha **precedenza sul parametro**, e l'allowlist `availableModels` dell'organizzazione, che può sostituire il modello richiesto. Se il modello effettivo differisce da quello richiesto, **dillo** invece di procedere come se nulla fosse.
+
+   Destinazione dell'escalation: `opus` per i quattro agenti su `sonnet`. Per `@solutions-architect` e `@technical-auditor`, che ci girano già, **la leva del modello non esiste**: dichiaralo e proponi solo le altre opzioni.
+
+6. **Registri l'esito in `progress.md`**: chi ha autorizzato, su quale causa, quale modello, e se ha risolto.
+
+**Si escala una volta sola.** Se dopo l'escalation il ciclo fallisce ancora sulla stessa causa, non proponi una seconda escalation. Il terzo fallimento non è un'informazione sul modello: è un'informazione su **ciò che gli è stato chiesto**. Un requisito ambiguo o un criterio di accettazione impossibile non diventano soddisfacibili con un modello più capace. Riporti all'utente che il problema è a monte, e proponi di tornare all'artefatto che lo genera.
+
 ### Invalidazione dei gate
 
 Se un artefatto a monte cambia dopo l'approvazione di un gate, i gate a valle **decadono**:

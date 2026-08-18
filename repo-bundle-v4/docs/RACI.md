@@ -42,6 +42,7 @@ Legenda ruoli: **ORC** Orchestratore · **PM** Product Manager · **SA** Solutio
 | deroga alla constitution | C | C | R | C | I | C | C | **A** |
 | classe di change (§ scale-adaptive) | R | C | C | C | I | C | C | **A** |
 | salto di uno step della Fase -1 | R *(raccomanda)* | C | I | I | I | I | I | **A** |
+| escalation di modello (non-convergenza) | R *(diagnostica e propone)* | C | C | C | C | C | C | **A** |
 
 ## Verifica
 

@@ -28,6 +28,13 @@ Tre miglioramenti presi dalla cartella `Miglioramenti/`. Nessuno tocca i control
 
 - **`docs/RACI.md`**: nuove righe per l'artefatto di brainstorming e per la decisione di saltare uno step della Fase -1.
 
+- **Regola di non-convergenza** in `CLAUDE.md`. Il framework diceva cosa fare quando un Gate fallisce, non cosa fare quando fallisce sempre allo stesso modo: l'Orchestratore, senza regola, rimandava indietro un'altra volta, e il ciclo girava a vuoto senza che nessuno se ne accorgesse — ogni singolo giro sembra un tentativo legittimo, solo guardandoli insieme si vede che sono lo stesso tentativo ripetuto.
+  - Il trigger è ancorato a un **identificatore**, non a un giudizio: il finding ID (`D-008`, derivato dal contenuto) o l'ID del requisito o task. Se nessuno dei due è stabile, l'Orchestratore dichiara di non poter stabilire l'identità e il trigger non scatta.
+  - **Due ipotesi, non una**: può non farcela il Maker, oppure può avere torto il Checker. Presentarne una sola è una scelta travestita da constatazione.
+  - **Si escala una volta sola.** Il terzo fallimento non parla del modello, parla di ciò che gli è stato chiesto.
+  - Verificato sulla documentazione di Claude Code: l'override del modello per invocazione **esiste**, ma **non esiste alcuna impostazione di thinking per singolo subagent** — quella leva è dell'utente, non dell'Orchestratore. E l'escalation può fallire in silenzio per variabile d'ambiente o allowlist, quindi va verificata invece che presunta.
+  - Contatore ed escalation si annotano in `progress.md`: un contatore che vive nella sessione si azzera alla ripresa.
+
 ### Corretto
 
 - **Il CLI dichiarava una versione falsa.** `burnup --version` stampava `4.0.0-beta.1` mentre `pyproject.toml` era già a `4.0.0rc2`: la stringa in `cli.py` non era mai stata allineata. Non è cosmetico — `INSTALL.md` §1 chiede di registrare nella matrice di compatibilità la versione **verificata**, e chi la leggeva da `--version` ci scriveva un numero sbagliato. La disciplina del pin poggiava su un dato che il sistema riportava scorretto. Trovato eseguendo il framework su un progetto reale.
