@@ -2,6 +2,30 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/). Versionamento semantico.
 
+## [4.0.0-rc.4] — 2026-08-18
+
+### Aggiunto
+
+- **`AGENTS.md`** alla radice: l'ancora per gli strumenti che non leggono `CLAUDE.md`. Contiene le garanzie minime valide anche senza subagent isolati — verifica indipendente, conferma umana ai gate, decisioni registrate — e **puntatori, mai copie**. La tabella dei sei agenti resta solo in `CLAUDE.md`: duplicarla creerebbe due fonti destinate a divergere.
+
+- **`PROJECT-STATE.md` generato, con il comando `burnup project-state`.** Risponde a «qual è la feature attiva e a che punto è» senza dover sapere quale cartella aprire — problema che non esiste finché sei tu nella stessa sessione, ed esiste eccome per un collega che apre il repository o per una sessione che riparte da zero.
+
+  **Generato, non tenuto a mano**, e la differenza non è di comodità. Un file di stato non aggiornato è peggio di non averlo: dà falsa sicurezza a chi lo legge. È la stessa decisione già presa per i gate (`D-010`, «lo stato dei gate è calcolato, non memorizzato»).
+
+- **Il contatore di non-convergenza è derivato.** La regola introdotta in `rc.3` chiedeva di tenere il conteggio dei rigetti a mano in `progress.md` — cioè collocava uno **stato** dentro una **vista**, che è precisamente il difetto che il framework ha chiuso altrove. Ora `burnup project-state` lo calcola dai Gate Decision Record e dai loro `open_findings`, dove l'identità della causa è il finding ID, stabile per costruzione (`D-008`).
+
+  L'algoritmo conta **per causa e non per serie**: con rigetti che portano `{A}`, `{A,B}`, `{B}` l'intersezione sull'intera coda sarebbe vuota, ma gli ultimi due insistono su `B` e la regola deve scattare. Diciotto test coprono il caso, insieme all'azzeramento su approvazione, alla separazione per gate e per feature, e all'ordine di inserimento non garantito dallo store.
+
+  **Limite dichiarato:** copre i soli rigetti registrati con `burnup gate reject`. I cicli interni a una fase non producono alcun record e restano un'osservazione umana. È scritto nel file generato, non solo qui: una copertura parziale spacciata per totale sarebbe peggio dell'assenza di copertura.
+
+### Modificato
+
+- `sdd-workflow-v4.html` **spostato dentro il bundle**: la cartella è ora autosufficiente, presentazione inclusa. Aggiunta la sezione «Memoria di progetto» e rinumerate le successive.
+- `progress-template.md`: la tabella dei rigetti accoglie ora **solo** i cicli che non passano da un gate. Per gli altri rimanda al file generato.
+- `INSTALL.md`, `docs/RACI.md`: nuove righe per `AGENTS.md` e `PROJECT-STATE.md`.
+
+---
+
 ## [4.0.0-rc.3] — 2026-08-14
 
 Tre miglioramenti presi dalla cartella `Miglioramenti/`. Nessuno tocca i controlli P0: tracciabilità, evidenza fingerprinted, test obbligatori, path confinement e `refresh --strict` restano identici.

@@ -27,6 +27,7 @@ from pathlib import Path
 from .config import CONFIG_SCHEMA_VERSION, load_config
 from .engine import git_revision, run_scan
 from .errors import BurnupError, ConfigError, ExitCode, QualityGateFailed
+from .projectstate import render as render_project_state, streak_non_convergenza
 from .gates import (
     CHANGE_CLASSES,
     DEFAULT_CHANGE_CLASS,
@@ -44,7 +45,7 @@ from .models import Decision, Finding, Relation, TestDefinition, TestRun
 from .render import render_dashboard, render_matrix, render_test_register
 from .risk_link import read_open_risks
 from .specscan import detect_specs_root, discover_features
-from .store import Store, StoreLock
+from .store import Store, StoreLock, atomic_write_text
 
 TEMPLATE_NAME = "requirement-burnup-config.template.yml"
 
@@ -65,6 +66,93 @@ def _emit(payload: dict, as_json: bool, lines: list[str]) -> None:
     else:
         for line in lines:
             print(line)
+
+
+def cmd_project_state(args) -> int:
+    """Rigenera PROJECT-STATE.md dal canonical store.
+
+    Il file e' una proiezione: non contiene nulla che non sia gia' nello store,
+    e nessuno deve ricordarsi di aggiornarlo. In particolare il conteggio dei
+    rigetti consecutivi sulla stessa causa e' **derivato** dai Gate Decision
+    Record, non tenuto a mano — un contatore che qualcuno deve ricordarsi di
+    incrementare non fa scattare nessuna regola.
+    """
+    project_root, config = _load(args)
+    store = Store(config.output_dir)
+    if not store.state_dir.exists():
+        raise ConfigError(
+            f"Nessun canonical store in {store.state_dir}.",
+            "Esegui prima 'burnup init'.",
+        )
+    data = store.load()
+
+    manifest = data.manifest
+    revision, dirty, _ = git_revision(project_root, config.output_dir)
+    specs_root = detect_specs_root(project_root)
+    current = {f.feature_id: f.fingerprints(project_root) for f in discover_features(specs_root)}
+    recorded = manifest.get("features", {})
+    changed = sorted(fid for fid in set(current) | set(recorded) if current.get(fid) != recorded.get(fid))
+    if changed:
+        freschezza = "stale — artefatti cambiati dopo l'ultimo refresh"
+    elif dirty:
+        freschezza = "stale — working tree con modifiche non committate"
+    elif not manifest.get("scanned_at"):
+        freschezza = "unknown — nessun refresh registrato"
+    else:
+        freschezza = "fresh"
+
+    feature_ids = sorted(
+        {r.feature_id for r in data.requirements if r.feature_id}
+        | {d.feature_id for d in data.gate_decisions if d.feature_id}
+    )
+    features = []
+    for fid in feature_ids:
+        attivi = [r for r in data.requirements if r.feature_id == fid and r.scope_state == "active"]
+        stati = evaluate_gates(fid, data.gate_decisions, _feature_fingerprints(project_root, fid, data))
+        classe = change_class_of(data, fid)
+        features.append({
+            "feature_id": fid,
+            "change_class": classe,
+            "gates": {g: s.status for g, s in sorted(stati.items()) if g in gates_for(classe)},
+            "scope": len(attivi),
+            "tested": sum(1 for r in attivi if r.lifecycle_state == "tested"),
+            "progress_path": f"{specs_root.name}/{fid}/progress.md",
+        })
+
+    streaks = streak_non_convergenza(data.gate_decisions)
+    aperti = [f for f in data.findings if f.status in ("open", "accepted")]
+
+    testo = render_project_state(
+        generato_il=now_iso(),
+        versione_engine=f"requirement-burnup (config schema {CONFIG_SCHEMA_VERSION})",
+        features=features,
+        findings_aperti=aperti,
+        streaks=streaks,
+        freschezza=freschezza,
+    )
+    destinazione = project_root / "PROJECT-STATE.md"
+    atomic_write_text(destinazione, testo)
+
+    _emit(
+        {
+            "command": "project-state",
+            "written": str(destinazione),
+            "features": len(features),
+            "non_convergence": streaks,
+            "open_findings": len(aperti),
+            "freshness": freschezza,
+        },
+        args.json,
+        [
+            f"Scritto {destinazione}",
+            f"Feature: {len(features)} | Findings aperti: {len(aperti)} | Misurazione: {freschezza}",
+        ] + (
+            [f"⚠ Non-convergenza su {len(streaks)} causa/e: "
+             + ", ".join(f"{s['finding_id']} ({s['rigetti_consecutivi']} rigetti)" for s in streaks)]
+            if streaks else ["Nessun ciclo che non converge."]
+        ),
+    )
+    return ExitCode.OK
 
 
 def _build_reports(data, result, project_root) -> dict[str, str]:
@@ -732,7 +820,7 @@ def build_parser() -> argparse.ArgumentParser:
     actor.add_argument("--reason", required=True, help="Motivo della decisione")
 
     p = _Parser(prog="burnup", description="Requirement Burn-up per Spec Kit")
-    p.add_argument("--version", action="version", version="requirement-burnup 4.0.0-rc.3 "
+    p.add_argument("--version", action="version", version="requirement-burnup 4.0.0-rc.4 "
                                                           f"(config schema {CONFIG_SCHEMA_VERSION})")
     sub = p.add_subparsers(dest="command", required=True)
 
@@ -748,6 +836,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_st = sub.add_parser("status", parents=[common], help="Stato corrente e sua freschezza (sola lettura)")
     p_st.set_defaults(func=cmd_status)
+
+    p_ps = sub.add_parser("project-state", parents=[common],
+                          help="Rigenera PROJECT-STATE.md dal canonical store")
+    p_ps.set_defaults(func=cmd_project_state)
 
     # -- test -------------------------------------------------------------
     p_test = sub.add_parser("test", help="Gestione delle definizioni di test")

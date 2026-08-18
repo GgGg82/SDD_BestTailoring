@@ -1,6 +1,6 @@
 # RACI — Responsibility Assignment Matrix
 
-**Versione:** 2.1 · **Stato:** normativo
+**Versione:** 2.2 · **Stato:** normativo
 
 Chiude P2-04 dell'audit: i ruoli erano descritti, ma nessun documento diceva chi è responsabile di cosa, chi approva, chi va consultato.
 
@@ -26,6 +26,8 @@ Legenda ruoli: **ORC** Orchestratore · **PM** Product Manager · **SA** Solutio
 | test (codice) | I | I | I | C | R | C | C | **A** |
 | definizioni dei test | C | C | I | C | C | R | C | **A** |
 | `progress.md` | R | I | I | I | I | I | I | **A** |
+| `PROJECT-STATE.md` *(generato)* | R *(rigenera)* | I | I | I | I | I | C | **A** |
+| `AGENTS.md` | C | C | R | C | C | C | C | **A** |
 | canonical store del burn-up | I | I | I | I | I | I | R | **A** |
 
 ## Decisioni

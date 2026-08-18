@@ -142,7 +142,7 @@
 
 <header class="hero">
   <div class="wrap">
-    <p class="eyebrow">SDD Governance · v4.0.0-rc.3 · framework generico</p>
+    <p class="eyebrow">SDD Governance · v4.0.0-rc.4 · framework generico</p>
     <h1>Flusso Operativo SDD Multi-Agente + Spec Kit</h1>
     <p class="lead">Sei agenti specialistici, quattro phase gate con invalidazione automatica, e una misurazione dei requisiti che retrocede quando l'evidenza decade. La beta.1 aveva già corretto gli errori di sequenza della v3 che rendevano due gate approvabili senza verifica — ma un collaudo indipendente sull'engine ha trovato la stessa classe di difetto riprodotta al suo interno. 18 difetti in totale, tutti corretti in questa rc.1.</p>
 
@@ -160,6 +160,7 @@
       <a href="#step">Tabella degli step</a>
       <a href="#gate">Phase gate</a>
       <a href="#burnup">Requirement Burn-up</a>
+      <a href="#memoria">Memoria di progetto</a>
       <a href="#classi">Classi di change</a>
       <a href="#correzioni">Cosa è cambiato dalla v3</a>
     </nav>
@@ -441,7 +442,8 @@ burnup test confirm-manual TEST-001 --result pass --evidence "verbale.pdf" \
 burnup link confirm 001-feat/FR-001 T014 --type implemented-by --actor … --reason …
 burnup requirement remove 001-feat/FR-009 --actor … --reason …
 burnup finding waive FND-… --actor … --reason … --expires 2026-12-31T00:00:00Z
-burnup gate approve 001-feat 4 --actor … --reason …</pre>
+burnup gate approve 001-feat 4 --actor … --reason …
+burnup project-state                                  # rigenera PROJECT-STATE.md</pre>
 
     <p class="section-note"><code>--actor</code> e <code>--reason</code> sono obbligatori: una decisione senza autore e motivo non è auditabile. Nella v3 non esisteva alcun comando — l'unico modo di definire un test era editare a mano la tabella Markdown generata, cioè proprio l'operazione che la documentazione vietava.</p>
 
@@ -460,9 +462,45 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
   </div>
 </section>
 
+<section id="memoria">
+  <div class="wrap">
+    <h2><span class="num">05</span> Memoria di progetto <span class="tag-new">rc.4</span></h2>
+    <p class="section-note">Due file alla radice, con nature opposte: uno cambia di rado ed è scritto a mano, l'altro cambia in continuazione e non va scritto affatto.</p>
+
+    <table>
+      <thead><tr><th>File</th><th>Risponde a</th><th>Chi lo scrive</th><th>Ciclo di vita</th></tr></thead>
+      <tbody>
+        <tr class="role-prespeckit"><td class="chi"><code>AGENTS.md</code></td><td>Chi legge questo repo, con quale strumento, e con quali garanzie minime?</td><td>umano</td><td>raramente, quando cambiano le convenzioni cross-tool</td></tr>
+        <tr class="role-burnup"><td class="chi"><code>PROJECT-STATE.md</code></td><td>Dove siamo adesso?</td><td><strong>generato</strong></td><td>rigenerato con <code>burnup project-state</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="border-left-color:var(--burnup);">
+      <strong>Perché generato e non tenuto a mano.</strong> Un file di stato non aggiornato è <em>peggio</em> di non averlo: dà falsa sicurezza a chi lo legge. È la stessa decisione già presa per i gate (<code>D-010</code>, «lo stato dei gate è calcolato, non memorizzato») e per lo stesso motivo — un valore che qualcuno deve ricordarsi di aggiornare, prima o poi, mente.
+    </div>
+
+    <h3>Il contatore di non-convergenza è derivato</h3>
+    <p class="section-note">La regola di non-convergenza scatta al <strong>secondo rigetto consecutivo sulla stessa causa</strong>. Quel conteggio non va tenuto: <code>burnup project-state</code> lo calcola leggendo i Gate Decision Record e i loro <code>open_findings</code>, dove l'identità della causa è il finding ID — stabile per costruzione (<code>D-008</code>: l'ID deriva da tipo, feature e subject, mai dalla descrizione).</p>
+    <p class="section-note"><strong>Limite dichiarato:</strong> copre i soli rigetti registrati con <code>burnup gate reject</code>. I cicli interni a una fase — il Business Analyst che rimanda <code>spec.md</code> al Product Manager durante l'1.2 — non producono alcun record, e per quelli il conteggio resta un'osservazione umana annotata in <code>progress.md</code>. Tacerlo darebbe l'impressione di una copertura totale che non c'è.</p>
+
+    <h3>Cosa fa l'Orchestratore quando un ciclo non converge</h3>
+    <table>
+      <thead><tr><th>Opzione</th><th>Chi la esegue</th></tr></thead>
+      <tbody>
+        <tr class="role-maker"><td class="chi">Rilancio con modello superiore, solo per quella invocazione</td><td>Orchestratore</td></tr>
+        <tr class="role-human"><td class="chi">Aumento dell'<em>extended thinking</em></td><td><strong>utente</strong> — non esiste un'impostazione per singolo subagent</td></tr>
+        <tr class="role-checker"><td class="chi">Revisione del rigetto del Checker</td><td>utente, con il Checker</td></tr>
+        <tr class="role-maker"><td class="chi">Ritorno all'artefatto a monte</td><td>Orchestratore, verso il Maker competente</td></tr>
+      </tbody>
+    </table>
+    <p class="section-note">Le ipotesi sono <strong>due</strong>: può non farcela il Maker, oppure può avere torto il Checker. Presentarne una sola sarebbe una scelta travestita da constatazione. E <strong>si escala una volta sola</strong>: il terzo fallimento non parla del modello, parla di ciò che gli è stato chiesto.</p>
+  </div>
+</section>
+
+
 <section id="classi">
   <div class="wrap">
-    <h2><span class="num">05</span> Classi di change</h2>
+    <h2><span class="num">06</span> Classi di change</h2>
     <p class="section-note">Un processo che costa più del lavoro che governa non viene seguito: viene aggirato, e a quel punto non governa più nulla.</p>
 
     <div class="callout" style="border-left-color:var(--gate);">
@@ -493,7 +531,7 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
 
 <section id="correzioni">
   <div class="wrap">
-    <h2><span class="num">06</span> Cosa è cambiato dalla v3</h2>
+    <h2><span class="num">07</span> Cosa è cambiato dalla v3</h2>
     <p class="section-note">Origine: audit completo della v3 — 12 P0, 32 P1, 6 P2 — riverificato finding per finding con probe eseguiti sul codice reale. Sette difetti aggiuntivi sono emersi dalla revisione critica dell'audit stesso.</p>
 
     <h3>Correzioni di flusso</h3>
@@ -561,7 +599,7 @@ burnup gate approve 001-feat 4 --actor … --reason …</pre>
 
 <footer>
   <div class="wrap">
-    SDD Multi-Agent Framework v4.0.0-rc.3 · documentazione normativa in <code>docs/</code>
+    SDD Multi-Agent Framework v4.0.0-rc.4 · documentazione normativa in <code>docs/</code>
   </div>
 </footer>
 

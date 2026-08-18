@@ -106,7 +106,7 @@ Che cosa sia saltabile, e a quali condizioni, lo stabilisce `docs/SCALE-ADAPTIVE
 1. **Leggi `progress.md`** della feature attiva. Se non esiste, è una feature nuova: proponi di crearlo dal template.
 2. **Determina lo step corrente** e annuncialo esplicitamente, inclusi gli step opzionali non ancora considerati.
 3. **Invoca l'agente competente.** Non fare tu il lavoro di un agente, anche se potresti: la separazione dei ruoli è la garanzia del sistema.
-4. **Ricevi il risultato** (gli agenti riportano solo a te) e aggiorna `progress.md`. **Nessun agente modifica `progress.md`.**
+4. **Ricevi il risultato** (gli agenti riportano solo a te) e aggiorna `progress.md`. **Nessun agente modifica `progress.md`.** Dopo un evento significativo — un gate approvato o rifiutato, un refresh — rigenera anche `PROJECT-STATE.md` con `burnup project-state`.
 5. **Ai Gate**, presenta l'esito del Checker in modo netto (PASS/FAIL + dettaglio) e chiedi conferma esplicita.
 6. **Se un Gate fallisce**, torna al Maker competente con il feedback preciso. Non correggere tu.
 
@@ -127,7 +127,7 @@ L'ultima riga vale quanto le altre: un trigger che scatta su un'identità invent
 **Cosa fai:**
 
 1. **Ti fermi.** Non rilanci il Maker con la stessa configurazione: un terzo tentativo identico è lo stesso tentativo.
-2. **Annoti il conteggio in `progress.md`**, con la causa. Un contatore che vive solo nella sessione si azzera alla ripresa, e la regola non scatta mai.
+2. **Leggi il conteggio, non tenerlo.** `burnup project-state` lo deriva dai Gate Decision Record e lo riporta in `PROJECT-STATE.md`, sezione *Cicli che non convergono*. Per i cicli interni a una fase, che non lasciano un record, il conteggio resta una tua osservazione: annotalo in `progress.md`, perché lì non c'è nulla che lo derivi al posto tuo.
 3. **Presenti all'utente le due ipotesi**, dicendo quale ti sembra più probabile **e perché**:
    - il **Maker** non ce la fa → un modello più capace può aiutare;
    - il **Checker** sta chiedendo qualcosa di sbagliato, impossibile o fuori scope → l'escalation peggiora le cose, perché si paga di più per soddisfare una richiesta che non andava soddisfatta.
@@ -195,6 +195,27 @@ burnup finding waive … | burnup finding close …
 - `burnup-init` — una tantum per progetto
 - `burnup-refresh --strict` — **prima di ogni approvazione di Gate 4**, obbligatorio
 - `burnup-status` — su richiesta, sola lettura
+- `burnup project-state` — rigenera `PROJECT-STATE.md`, dopo ogni evento significativo
+
+## Memoria di progetto e continuità cross-tool
+
+Due file alla radice, con nature opposte.
+
+**`AGENTS.md`** — l'ancora per gli strumenti che non leggono questo file: Codex CLI e chiunque segua quella convenzione. Contiene le garanzie minime valide anche senza subagent isolati, e **puntatori, mai copie**. Cambia di rado. Non ci si duplica la tabella dei sei agenti: esisterebbe in due posti e i due divergerebbero.
+
+**`PROJECT-STATE.md`** — lo stato corrente del progetto: quali feature esistono, a che punto sono i gate, quali cicli non convergono, quali finding sono aperti. **È generato**, e si rigenera con:
+
+```
+burnup project-state
+```
+
+Rigeneralo dopo ogni evento significativo — approvazione o rifiuto di un gate, refresh, chiusura di una feature. Non scriverci dentro: la prossima rigenerazione cancella tutto.
+
+> **Perché generato e non tenuto a mano.** Un file di stato non aggiornato è peggio di non averlo: dà falsa sicurezza a chi lo legge. Il framework ha già preso questa decisione per i gate (`D-010`, «lo stato dei gate è calcolato, non memorizzato»), e per lo stesso motivo: un valore che qualcuno deve ricordarsi di aggiornare, prima o poi, mente. Il Markdown qui è una proiezione, non un database.
+
+**Il contatore di non-convergenza vive lì, ed è derivato.** `burnup project-state` calcola i rigetti consecutivi sulla stessa causa leggendo i Gate Decision Record e i loro `open_findings`, dove l'identità della causa è il finding ID — stabile per costruzione (`D-008`). Non devi tenere alcun conteggio: devi solo rigenerare il file e leggerlo.
+
+Copre però i soli rigetti registrati con `burnup gate reject`. I cicli interni a una fase non producono un record, e su quelli il conteggio resta un'osservazione tua.
 
 ## Le due regole MUST del sistema
 
@@ -220,6 +241,8 @@ burnup finding waive … | burnup finding close …
 
 ## Percorsi di riferimento
 
+- Ancora cross-tool: `AGENTS.md` (livello repo)
+- Stato del progetto: `PROJECT-STATE.md` (livello repo) — **generato**, si rigenera con `burnup project-state`
 - Constitution: `.specify/memory/constitution.md` (livello repo)
 - Fase -1: `pre-speckit/brainstorming/`, `pre-speckit/project-brief.md`, `pre-speckit/user-journeys.md` (livello repo)
 - Feature attiva: `specs/<NNN-feature>/` **oppure** `.specify/specs/<NNN-feature>/` — verifica quale esiste davvero. Se esistono **entrambe popolate**, lo strumento burn-up si ferma con errore: è una situazione ambigua che farebbe sparire silenziosamente metà dei requisiti dalle metriche.

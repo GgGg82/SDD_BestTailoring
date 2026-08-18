@@ -20,7 +20,7 @@ specify version   # verifica che la versione corrisponda
 
 | Framework | Spec Kit testato | Note |
 |---|---|---|
-| 4.0.0-rc.3 | *da fissare al momento del bootstrap* | Registra qui il tag verificato ed eseguito con successo end-to-end. |
+| 4.0.0-rc.4 | *da fissare al momento del bootstrap* | Registra qui il tag verificato ed eseguito con successo end-to-end. |
 
 Prima di aggiornare Spec Kit: esegui la suite di test del framework, poi una feature demo end-to-end, e solo dopo aggiorna questa tabella.
 
@@ -29,6 +29,7 @@ Prima di aggiornare Spec Kit: esegui la suite di test del framework, poi una fea
 ```
 tuo-repo/
 ├── CLAUDE.md
+├── AGENTS.md                  ← ancora cross-tool (Codex CLI e altri)
 ├── docs/                      ← documentazione normativa (9 file)
 ├── .claude/
 │   ├── agents/                ← i 6 agenti
@@ -43,7 +44,7 @@ tuo-repo/
 
 Se il repo ha già `.claude/` o `.specify/` create da `specify init`, **unisci** il contenuto: non sovrascrivere le cartelle intere.
 
-`requirement-burnup-config.yml` e la cartella `requirement-burnup/` **non** fanno parte della copia: nascono con `burnup init`.
+`requirement-burnup-config.yml` e la cartella `requirement-burnup/` **non** fanno parte della copia: nascono con `burnup init`. Nemmeno `PROJECT-STATE.md`: è generato, e nasce al primo `burnup project-state`.
 
 ## 3. Estensione Requirement Burn-up (opzionale)
 
@@ -74,6 +75,7 @@ Se il progetto non ha bisogno di tracciabilità dei requisiti, ometti sempliceme
 requirement-burnup/state/      ← VERSIONA: è la fonte di verità e la storia del progetto
 requirement-burnup/reports/    ← versiona se vuoi leggerli su GitHub; sono rigenerabili
 requirement-burnup/state/.lock ← NON versionare (transitorio)
+PROJECT-STATE.md              ← versionalo se vuoi che chi apre il repo veda subito lo stato; è rigenerabile, non è fonte di verità
 ```
 
 ## 3b. Preset `sdd-traceability` (consigliato)

@@ -94,10 +94,12 @@ burnup status                    # freschezza della misurazione
 ## Cicli di ritorno e non-convergenza
 
 > Il **secondo rigetto consecutivo sulla stessa causa** fa scattare la regola di non-convergenza (`CLAUDE.md`).
-> Il conteggio va tenuto qui: se vive solo nella sessione, alla ripresa riparte da zero e la regola non scatta mai.
-> Identità della causa: finding ID se il rigetto viene dall'engine, altrimenti ID del requisito o del task.
+>
+> **Per i rigetti di gate non tenere alcun conteggio:** lo deriva `burnup project-state` dai Gate Decision Record e lo riporta in `PROJECT-STATE.md`, sezione *Cicli che non convergono*. Un contatore tenuto a mano si dimentica, e una regola che non scatta è come se non ci fosse.
+>
+> Qui sotto vanno **solo** i cicli che non passano da un gate — per esempio il Business Analyst che rimanda `spec.md` al Product Manager durante l'1.2. Quelli non lasciano alcun record, e nessuno li deriva al posto tuo.
 
-| Causa | Maker | Checker | Rigetti consecutivi | Esito |
+| Causa (requisito o task) | Maker | Checker | Rigetti consecutivi | Esito |
 |---|---|---|:-:|---|
 | | | | | |
 
